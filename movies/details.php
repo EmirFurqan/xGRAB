@@ -269,28 +269,37 @@ if (isset($_SESSION['user_id'])) {
                         
                         <!-- Watchlist Actions -->
                         <div class="mb-4">
-                            <form method="post" action="../watchlist/add_movie.php" class="flex flex-wrap gap-3 items-center">
-                                <input type="hidden" name="movie_id" value="<?php echo $movie_id; ?>">
-                                <select name="watchlist_id" class="px-4 py-2 bg-gray-700 border-2 border-gray-600 rounded-lg text-gray-100 focus:border-red-500 focus:ring-2 focus:ring-red-500 transition-all duration-300 min-w-[200px]">
-                                    <option value="" class="bg-gray-700 text-gray-100">Select Watchlist</option>
-                                    <?php 
-                                    if ($watchlist_result) {
-                                        mysqli_data_seek($watchlist_result, 0);
-                                        while($wl = mysqli_fetch_assoc($watchlist_result)): 
-                                    ?>
-                                        <option value="<?php echo $wl['watchlist_id']; ?>" class="bg-gray-700 text-gray-100">
-                                            <?php echo htmlspecialchars($wl['watchlist_name']); ?>
-                                            <?php echo $wl['movie_id'] ? ' (Already added)' : ''; ?>
-                                        </option>
-                                    <?php 
-                                        endwhile;
-                                    }
-                                    ?>
-                                </select>
-                                <button type="submit" class="px-6 py-2 bg-gradient-to-r from-red-600 to-red-800 text-white rounded-lg hover:from-red-700 hover:to-red-900 transition-all duration-300 shadow-lg hover:shadow-xl font-medium">
-                                    Add to Watchlist
+                            <?php 
+                            // Check how many watchlists exist
+                            $watchlist_count = 0;
+                            $watchlists_array = [];
+                            if ($watchlist_result) {
+                                mysqli_data_seek($watchlist_result, 0);
+                                while($wl = mysqli_fetch_assoc($watchlist_result)) {
+                                    $watchlist_count++;
+                                    $watchlists_array[] = $wl;
+                                }
+                            }
+                            ?>
+                            
+                            <?php if ($watchlist_count > 0): ?>
+                                <button type="button" 
+                                        onclick="openWatchlistModal()"
+                                        class="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg hover:from-blue-700 hover:to-blue-900 transition-all duration-300 shadow-lg hover:shadow-xl font-medium flex items-center space-x-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                    </svg>
+                                    <span>Add to Watchlist</span>
                                 </button>
-                            </form>
+                            <?php else: ?>
+                                <a href="../watchlist/create.php" 
+                                   class="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg hover:from-blue-700 hover:to-blue-900 transition-all duration-300 shadow-lg hover:shadow-xl font-medium inline-flex items-center space-x-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                    </svg>
+                                    <span>Create a Watchlist</span>
+                                </a>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -643,6 +652,187 @@ if (isset($_SESSION['user_id'])) {
             </div>
         </div>
     </div>
+    
+    <!-- Watchlist Modal -->
+    <?php if (isset($_SESSION['user_id']) && !empty($watchlists_array)): ?>
+    <div id="watchlistModal" class="fixed inset-0 z-50 hidden">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300" onclick="closeWatchlistModal()"></div>
+        
+        <!-- Modal Content -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md transform transition-all duration-300 scale-95 opacity-0" id="watchlistModalContent">
+            <div class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 overflow-hidden mx-4">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                            </svg>
+                            Add to Watchlist
+                        </h3>
+                        <button type="button" onclick="closeWatchlistModal()" class="text-white/80 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="text-blue-200 text-sm mt-1">Select one or more watchlists</p>
+                </div>
+                
+                <!-- Body -->
+                <form method="post" action="../watchlist/add_movie_multiple.php" id="watchlistForm">
+                    <input type="hidden" name="movie_id" value="<?php echo $movie_id; ?>">
+                    
+                    <div class="px-6 py-4 max-h-[300px] overflow-y-auto custom-scrollbar">
+                        <div class="space-y-2">
+                            <?php foreach ($watchlists_array as $wl): ?>
+                                <label class="flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-700/50 group <?php echo $wl['movie_id'] ? 'opacity-60' : ''; ?>">
+                                    <input type="checkbox" 
+                                           name="watchlist_ids[]" 
+                                           value="<?php echo $wl['watchlist_id']; ?>"
+                                           <?php echo $wl['movie_id'] ? 'disabled checked' : ''; ?>
+                                           class="w-5 h-5 rounded border-2 border-gray-500 bg-gray-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-all duration-200">
+                                    <div class="ml-3 flex-1">
+                                        <span class="text-gray-100 font-medium group-hover:text-white transition-colors">
+                                            <?php echo htmlspecialchars($wl['watchlist_name']); ?>
+                                        </span>
+                                        <?php if ($wl['movie_id']): ?>
+                                            <span class="ml-2 text-xs text-green-400 font-medium">✓ Already added</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div class="px-6 py-4 bg-gray-900/50 border-t border-gray-700 flex items-center justify-between gap-3">
+                        <a href="../watchlist/create.php" class="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                            Create New
+                        </a>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="closeWatchlistModal()" 
+                                    class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-all duration-300 font-medium">
+                                Cancel
+                            </button>
+                            <button type="submit" id="addToWatchlistBtn"
+                                    class="px-5 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg hover:from-blue-700 hover:to-blue-900 transition-all duration-300 shadow-lg hover:shadow-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                                Add Selected
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #374151;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #6B7280;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #9CA3AF;
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        
+        @keyframes modalFadeOut {
+            from {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+        }
+        
+        #watchlistModalContent.show {
+            animation: modalFadeIn 0.3s ease-out forwards;
+        }
+        
+        #watchlistModalContent.hide {
+            animation: modalFadeOut 0.2s ease-in forwards;
+        }
+    </style>
+    
+    <script>
+        function openWatchlistModal() {
+            const modal = document.getElementById('watchlistModal');
+            const content = document.getElementById('watchlistModalContent');
+            
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // Trigger animation
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('show');
+            }, 10);
+            
+            updateAddButton();
+        }
+        
+        function closeWatchlistModal() {
+            const modal = document.getElementById('watchlistModal');
+            const content = document.getElementById('watchlistModalContent');
+            
+            content.classList.remove('show');
+            content.classList.add('hide');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                content.classList.remove('hide');
+                content.classList.add('scale-95', 'opacity-0');
+                document.body.style.overflow = '';
+            }, 200);
+        }
+        
+        function updateAddButton() {
+            const checkboxes = document.querySelectorAll('#watchlistForm input[type="checkbox"]:not(:disabled):checked');
+            const btn = document.getElementById('addToWatchlistBtn');
+            btn.disabled = checkboxes.length === 0;
+        }
+        
+        // Listen for checkbox changes
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('watchlistForm');
+            if (form) {
+                form.addEventListener('change', updateAddButton);
+            }
+        });
+        
+        // Close on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('watchlistModal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeWatchlistModal();
+                }
+            }
+        });
+    </script>
+    <?php endif; ?>
 </body>
 </html>
-
