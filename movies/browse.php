@@ -134,7 +134,7 @@ if (isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Browse Movies - Movie Database</title>
+    <title>Browse Movies - xGrab</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {

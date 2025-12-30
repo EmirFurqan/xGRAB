@@ -106,7 +106,7 @@ if (isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($movie['title']); ?> - Movie Database</title>
+    <title><?php echo htmlspecialchars($movie['title']); ?> - xGrab</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @keyframes fadeIn {

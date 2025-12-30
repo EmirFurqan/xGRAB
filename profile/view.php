@@ -120,7 +120,7 @@ $avatar_color = $avatar_colors[$color_index];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($user['username']); ?> - Profile</title>
+    <title><?php echo htmlspecialchars($user['username']); ?>'s Profile - xGrab</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @keyframes fadeIn {

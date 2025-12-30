@@ -1,11 +1,40 @@
+<?php
+// Determine base path for links based on current directory
+// This logic mirrors includes/nav.php to ensure consistency
+$base_path = "";
+$script_path = $_SERVER['PHP_SELF'];
+
+// Normalize path separators
+$script_path = str_replace('\\', '/', $script_path);
+
+// Determine depth
+if (
+    strpos($script_path, '/admin/users/') !== false ||
+    strpos($script_path, '/admin/movies/') !== false ||
+    strpos($script_path, '/admin/reviews/') !== false
+) {
+    $base_path = "../../";
+} elseif (
+    strpos($script_path, '/admin/') !== false ||
+    strpos($script_path, '/movies/') !== false ||
+    strpos($script_path, '/watchlist/') !== false ||
+    strpos($script_path, '/profile/') !== false ||
+    strpos($script_path, '/reviews/') !== false ||
+    strpos($script_path, '/cast/') !== false ||
+    strpos($script_path, '/favorites/') !== false ||
+    strpos($script_path, '/watched/') !== false ||
+    strpos($script_path, '/auth/') !== false
+) {
+    $base_path = "../";
+}
+?>
 <footer class="bg-gray-900 text-gray-300 border-t border-gray-800 mt-auto">
     <!-- Main Footer Content -->
     <div class="container mx-auto px-4 py-12">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
             <!-- Brand Column -->
             <div class="space-y-4">
-                <a href="<?php echo (strpos($_SERVER['PHP_SELF'], '/xGRAB/index.php') !== false) ? 'index.php' : ((strpos($_SERVER['PHP_SELF'], '/xGRAB/auth/') !== false || strpos($_SERVER['PHP_SELF'], '/xGRAB/admin/') !== false) ? '../index.php' : '../index.php'); ?>"
-                    class="flex items-center gap-2 group">
+                <a href="<?php echo $base_path; ?>index.php" class="flex items-center gap-2 group">
                     <span class="text-3xl">🍿</span>
                     <span
                         class="text-2xl font-bold bg-gradient-to-r from-red-500 to-red-700 bg-clip-text text-transparent group-hover:from-red-400 group-hover:to-red-600 transition-all duration-300">xGrab</span>
@@ -47,13 +76,13 @@
             <div>
                 <h3 class="text-white font-bold mb-4">Quick Links</h3>
                 <ul class="space-y-2">
-                    <li><a href="<?php echo (strpos($_SERVER['PHP_SELF'], 'browse.php') !== false) ? 'browse.php' : '../movies/browse.php'; ?>"
+                    <li><a href="<?php echo $base_path; ?>movies/browse.php"
                             class="hover:text-red-400 transition-colors duration-300">Browse Movies</a></li>
-                    <li><a href="<?php echo (strpos($_SERVER['PHP_SELF'], 'browse.php') !== false) ? 'browse.php?category=top_rated' : '../movies/browse.php?category=top_rated'; ?>"
+                    <li><a href="<?php echo $base_path; ?>movies/browse.php?category=top_rated"
                             class="hover:text-red-400 transition-colors duration-300">Top Rated</a></li>
-                    <li><a href="<?php echo (strpos($_SERVER['PHP_SELF'], 'browse.php') !== false) ? 'browse.php?category=popular' : '../movies/browse.php?category=popular'; ?>"
+                    <li><a href="<?php echo $base_path; ?>movies/browse.php?category=popular"
                             class="hover:text-red-400 transition-colors duration-300">Popular</a></li>
-                    <li><a href="<?php echo (strpos($_SERVER['PHP_SELF'], 'browse.php') !== false) ? 'browse.php?category=upcoming' : '../movies/browse.php?category=upcoming'; ?>"
+                    <li><a href="<?php echo $base_path; ?>movies/browse.php?category=upcoming"
                             class="hover:text-red-400 transition-colors duration-300">Upcoming</a></li>
                 </ul>
             </div>
@@ -62,9 +91,9 @@
             <div>
                 <h3 class="text-white font-bold mb-4">Community</h3>
                 <ul class="space-y-2">
-                    <li><a href="<?php echo (strpos($_SERVER['PHP_SELF'], 'browse.php') !== false) ? '../register.php' : ((strpos($_SERVER['PHP_SELF'], '/xGRAB/index.php') !== false) ? 'register.php' : '../register.php'); ?>"
+                    <li><a href="<?php echo $base_path; ?>register.php"
                             class="hover:text-red-400 transition-colors duration-300">Sign Up</a></li>
-                    <li><a href="<?php echo (strpos($_SERVER['PHP_SELF'], 'browse.php') !== false) ? '../login.php' : ((strpos($_SERVER['PHP_SELF'], '/xGRAB/index.php') !== false) ? 'login.php' : '../login.php'); ?>"
+                    <li><a href="<?php echo $base_path; ?>login.php"
                             class="hover:text-red-400 transition-colors duration-300">Login</a></li>
                     <li><a href="#" class="hover:text-red-400 transition-colors duration-300">Guidelines</a></li>
                     <li><a href="#" class="hover:text-red-400 transition-colors duration-300">Leaderboard</a></li>
