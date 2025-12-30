@@ -259,3 +259,8 @@ CREATE TABLE IF NOT EXISTS review_likes (
     INDEX idx_review (review_id),
     INDEX idx_user (user_id)
 );
+
+
+ALTER TABLE movies 
+ADD COLUMN xgrab_average_rating DECIMAL(3,2) DEFAULT 0.00,
+ADD COLUMN xgrab_total_ratings INT DEFAULT 0;

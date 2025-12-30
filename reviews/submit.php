@@ -95,12 +95,13 @@ if (mysqli_num_rows($check_result) > 0) {
     mysqli_close($conn);
 }
 
-// Recalculate movie's average rating and total rating count
+// Recalculate xGrab rating (user-generated ratings)
 // Uses subqueries to calculate average and count from all reviews
-// This ensures movie ratings stay accurate after each review submission
+// Note: average_rating and total_ratings are reserved for API (TMDB) ratings and should not be updated here
+// This ensures xGrab ratings stay accurate after each review submission
 $calc_sql = "UPDATE movies SET 
-             average_rating = (SELECT AVG(rating_value) FROM reviews WHERE movie_id = $movie_id),
-             total_ratings = (SELECT COUNT(*) FROM reviews WHERE movie_id = $movie_id)
+             xgrab_average_rating = COALESCE((SELECT AVG(rating_value) FROM reviews WHERE movie_id = $movie_id), 0),
+             xgrab_total_ratings = (SELECT COUNT(*) FROM reviews WHERE movie_id = $movie_id)
              WHERE movie_id = $movie_id";
 $conn = getConnection();
 mysqli_query($conn, $calc_sql);

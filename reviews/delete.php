@@ -38,12 +38,13 @@ if (mysqli_num_rows($check_result) == 0) {
 $delete_sql = "DELETE FROM reviews WHERE review_id = $review_id";
 myQuery($delete_sql);
 
-// Recalculate movie's average rating and total rating count
+// Recalculate xGrab rating (user-generated ratings)
 // COALESCE handles case where no reviews remain (sets to 0 instead of NULL)
-// This ensures movie ratings stay accurate after review deletion
+// Note: average_rating and total_ratings are reserved for API (TMDB) ratings and should not be updated here
+// This ensures xGrab ratings stay accurate after review deletion
 $calc_sql = "UPDATE movies SET 
-             average_rating = COALESCE((SELECT AVG(rating_value) FROM reviews WHERE movie_id = $movie_id), 0),
-             total_ratings = (SELECT COUNT(*) FROM reviews WHERE movie_id = $movie_id)
+             xgrab_average_rating = COALESCE((SELECT AVG(rating_value) FROM reviews WHERE movie_id = $movie_id), 0),
+             xgrab_total_ratings = (SELECT COUNT(*) FROM reviews WHERE movie_id = $movie_id)
              WHERE movie_id = $movie_id";
 myQuery($calc_sql);
 

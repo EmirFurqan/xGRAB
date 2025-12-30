@@ -203,13 +203,24 @@ if (isset($_SESSION['user_id'])) {
                     
                     <!-- Rating -->
                     <div class="mb-6">
-                        <div class="flex items-center">
+                        <!-- API Rating (TMDB) - Always displayed -->
+                        <div class="flex items-center mb-2">
                             <div class="flex items-center bg-yellow-400 px-4 py-2 rounded-lg shadow-md">
                                 <span class="text-yellow-900 text-2xl">★</span>
                                 <span class="text-2xl font-bold ml-2 text-gray-900"><?php echo number_format($movie['average_rating'], 1); ?></span>
                             </div>
                             <span class="text-gray-400 ml-4">(<?php echo $movie['total_ratings']; ?> ratings)</span>
                         </div>
+                        <!-- xGrab Rating (User-generated) - Only shown if there are user ratings -->
+                        <?php if (isset($movie['xgrab_total_ratings']) && $movie['xgrab_total_ratings'] > 0): ?>
+                            <div class="flex items-center">
+                                <div class="flex items-center bg-red-600 px-4 py-2 rounded-lg shadow-md">
+                                    <span class="text-white text-2xl">★</span>
+                                    <span class="text-2xl font-bold ml-2 text-white"><?php echo number_format($movie['xgrab_average_rating'], 1); ?></span>
+                                </div>
+                                <span class="text-gray-400 ml-4">xGrab Rating (<?php echo $movie['xgrab_total_ratings']; ?> <?php echo $movie['xgrab_total_ratings'] == 1 ? 'rater' : 'raters'; ?>)</span>
+                            </div>
+                        <?php endif; ?>
                     </div>
                     
                     <!-- Genres -->
