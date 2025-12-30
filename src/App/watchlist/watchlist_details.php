@@ -29,10 +29,12 @@ $list_result = myQuery($list_sql);
 if ($list_result->num_rows == 0) die("Access Denied.");
 $list = $list_result->fetch_assoc();
 
-// 3. GET MOVIES
-$movies_sql = "SELECT m.movie_id, m.title, m.poster_image, m.release_year, m.average_rating, wm.watched_status 
+// 3. GET MOVIES (with watched status from user_watched_movies)
+$movies_sql = "SELECT m.movie_id, m.title, m.poster_image, m.release_year, m.average_rating,
+                      CASE WHEN uwm.movie_id IS NOT NULL THEN 1 ELSE 0 END as is_watched
                FROM watchlist_movies wm
                JOIN movies m ON wm.movie_id = m.movie_id
+               LEFT JOIN user_watched_movies uwm ON uwm.movie_id = m.movie_id AND uwm.user_id = $user_id
                WHERE wm.watchlist_id = $watchlist_id
                ORDER BY wm.date_added DESC";
 $movies = myQuery($movies_sql);
@@ -74,7 +76,7 @@ $movies = myQuery($movies_sql);
                             <br><span style="color: #e6b800;">&#9733; <?php echo $row['average_rating']; ?></span>
                         </td>
                         <td align="center">
-                            <?php echo ($row['watched_status'] == 'watched') ? "<span style='color:green;'>&#10003; Watched</span>" : "<span style='color:#999;'>To Watch</span>"; ?>
+                            <?php echo ($row['is_watched'] == 1) ? "<span style='color:green;'>&#10003; Watched</span>" : "<span style='color:#999;'>To Watch</span>"; ?>
                         </td>
                         <td align="center">
                             <form method="POST">

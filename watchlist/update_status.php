@@ -27,14 +27,40 @@ if (mysqli_num_rows($check_result) == 0) {
 // Handle bulk actions
 if (isset($_POST['bulk_action']) && isset($_POST['movie_ids']) && is_array($_POST['movie_ids'])) {
     $movie_ids = array_map('intval', $_POST['movie_ids']);
-    $status = ($_POST['bulk_action'] == 'mark_watched') ? 'watched' : 'not_watched';
+    $action = $_POST['bulk_action']; // 'mark_watched' or 'mark_not_watched'
     
     if (count($movie_ids) > 0) {
-        $movie_ids_str = implode(',', $movie_ids);
-        $update_sql = "UPDATE watchlist_movies SET watched_status = '$status' 
-                       WHERE watchlist_id = $watchlist_id AND movie_id IN ($movie_ids_str)";
-        if (myQuery($update_sql)) {
-            header("Location: view.php?id=$watchlist_id&success=" . count($movie_ids) . " movie(s) updated");
+        $success_count = 0;
+        $error_count = 0;
+        
+        foreach ($movie_ids as $movie_id) {
+            if ($action == 'mark_watched') {
+                // Add to user_watched_movies (use INSERT IGNORE to avoid duplicates)
+                $insert_sql = "INSERT IGNORE INTO user_watched_movies (user_id, movie_id) 
+                              VALUES ($user_id, $movie_id)";
+                if (myQuery($insert_sql)) {
+                    $success_count++;
+                } else {
+                    $error_count++;
+                }
+            } else {
+                // Remove from user_watched_movies
+                $delete_sql = "DELETE FROM user_watched_movies 
+                              WHERE user_id = $user_id AND movie_id = $movie_id";
+                if (myQuery($delete_sql)) {
+                    $success_count++;
+                } else {
+                    $error_count++;
+                }
+            }
+        }
+        
+        if ($success_count > 0) {
+            $message = $success_count . " movie(s) updated";
+            if ($error_count > 0) {
+                $message .= " (" . $error_count . " failed)";
+            }
+            header("Location: view.php?id=$watchlist_id&success=" . urlencode($message));
         } else {
             header("Location: view.php?id=$watchlist_id&error=Failed to update movies");
         }
@@ -55,9 +81,17 @@ if (isset($_POST['movie_id']) && isset($_POST['status'])) {
         exit();
     }
     
-    // Update status
-    $update_sql = "UPDATE watchlist_movies SET watched_status = '$status' 
-                   WHERE watchlist_id = $watchlist_id AND movie_id = $movie_id";
+    // Update status in user_watched_movies table
+    if ($status == 'watched') {
+        // Add to user_watched_movies
+        $update_sql = "INSERT IGNORE INTO user_watched_movies (user_id, movie_id) 
+                      VALUES ($user_id, $movie_id)";
+    } else {
+        // Remove from user_watched_movies
+        $update_sql = "DELETE FROM user_watched_movies 
+                      WHERE user_id = $user_id AND movie_id = $movie_id";
+    }
+    
     if (myQuery($update_sql)) {
         header("Location: view.php?id=$watchlist_id&success=Status updated");
     } else {
