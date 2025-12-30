@@ -400,6 +400,7 @@ while ($watchlist = mysqli_fetch_assoc($result)) {
             <?php endif; ?>
         </script>
     </div>
+    <?php require("../includes/footer.php"); ?>
 </body>
 
 </html>

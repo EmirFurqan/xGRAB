@@ -777,6 +777,7 @@ if (isset($_SESSION['user_id'])) {
             }
         }
     </script>
+    <?php require("includes/footer.php"); ?>
 </body>
 
 </html>

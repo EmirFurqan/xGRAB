@@ -579,6 +579,7 @@ if (isset($_SESSION['user_id'])) {
             </div>
         <?php endif; ?>
     </div>
+    <?php require("../includes/footer.php"); ?>
 </body>
 
 </html>

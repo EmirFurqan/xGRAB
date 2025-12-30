@@ -582,6 +582,7 @@ $avatar_color = $avatar_colors[$color_index];
             </div>
         <?php endif; ?>
     </div>
+    <?php require("../includes/footer.php"); ?>
 </body>
 
 </html>

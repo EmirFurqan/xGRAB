@@ -834,5 +834,6 @@ if (isset($_SESSION['user_id'])) {
         });
     </script>
     <?php endif; ?>
+    <?php require("../includes/footer.php"); ?>
 </body>
 </html>
