@@ -1,8 +1,15 @@
 <?php
+/**
+ * Add Movie Page (Admin)
+ * Allows administrators to add new movies to the database.
+ * Handles movie data entry, poster image upload, and genre assignment.
+ */
+
 session_start();
 require("../../connect.php");
 require("../../image_handler.php");
 
+// Verify user has admin privileges
 if (!isset($_SESSION['user_id']) || !$_SESSION['is_admin']) {
     die("Access Denied");
 }
@@ -10,11 +17,13 @@ if (!isset($_SESSION['user_id']) || !$_SESSION['is_admin']) {
 $error = "";
 $success = "";
 
-// Get all genres for selection
+// Retrieve all available genres for multi-select dropdown
 $genres_sql = "SELECT * FROM genres ORDER BY genre_name";
 $genres_result = myQuery($genres_sql);
 
+// Process movie creation form submission
 if (isset($_POST['submit'])) {
+    // Extract and sanitize form data
     $title = escapeString($_POST['title']);
     $release_year = (int) $_POST['release_year'];
     $description = escapeString($_POST['description']);
@@ -24,10 +33,13 @@ if (isset($_POST['submit'])) {
     $original_language = escapeString($_POST['original_language']);
     $selected_genres = isset($_POST['genres']) ? $_POST['genres'] : [];
 
-    // Handle poster image upload
+    // Handle poster image file upload
     $poster_image = '';
     if (isset($_FILES['poster_image'])) {
+        // Check if file was uploaded successfully
         if ($_FILES['poster_image']['error'] == UPLOAD_ERR_OK) {
+            // Use image_handler function to upload with validation
+            // Max size: 5MB (5242880 bytes), prefix: 'poster_'
             $upload_result = uploadImage($_FILES['poster_image'], 'poster', 'poster_', 5242880);
             if ($upload_result['success']) {
                 $poster_image = $upload_result['filename'];
@@ -35,7 +47,8 @@ if (isset($_POST['submit'])) {
                 $error = "Image upload failed: " . $upload_result['error'];
             }
         } elseif ($_FILES['poster_image']['error'] != UPLOAD_ERR_NO_FILE) {
-            // File upload error (but not "no file" error)
+            // Handle specific upload error codes
+            // UPLOAD_ERR_NO_FILE is allowed (poster is optional)
             $upload_errors = [
                 UPLOAD_ERR_INI_SIZE => 'File exceeds upload_max_filesize directive in php.ini',
                 UPLOAD_ERR_FORM_SIZE => 'File exceeds MAX_FILE_SIZE directive',
@@ -49,20 +62,25 @@ if (isset($_POST['submit'])) {
         }
     }
 
+    // Validate required fields
     if (empty($title) || empty($release_year)) {
         $error = "Title and release year are required";
     } elseif (empty($error)) {
-        // Insert movie
+        // Insert movie record into database
+        // Handle NULL poster_image if no file was uploaded
         $poster_value = $poster_image ? "'$poster_image'" : 'NULL';
         $insert_sql = "INSERT INTO movies (title, release_year, description, poster_image, runtime, budget, revenue, original_language) 
                        VALUES ('$title', $release_year, '$description', $poster_value, " . ($runtime ? $runtime : 'NULL') . ", $budget, $revenue, '$original_language')";
 
+        // Use getConnection() for access to mysqli_insert_id()
         $conn = getConnection();
         if (mysqli_query($conn, $insert_sql)) {
+            // Get the ID of the newly inserted movie
             $movie_id = mysqli_insert_id($conn);
             mysqli_close($conn);
 
-            // Add genres
+            // Associate selected genres with the movie
+            // Creates records in movie_genres junction table
             if (!empty($selected_genres)) {
                 foreach ($selected_genres as $genre_id) {
                     $genre_id = (int) $genre_id;
@@ -71,7 +89,7 @@ if (isset($_POST['submit'])) {
                 }
             }
 
-            // Log admin action
+            // Log admin action for audit trail
             $admin_id = $_SESSION['user_id'];
             $log_sql = "INSERT INTO admin_logs (admin_id, action_type, target_type, target_id, description) 
                         VALUES ($admin_id, 'movie_add', 'movie', $movie_id, 'Added new movie: $title')";

@@ -1,31 +1,44 @@
 <?php
+/**
+ * Movie Details Page
+ * Displays comprehensive information about a single movie including cast, crew, reviews, and trailers.
+ * Shows user-specific data like favorite status and watchlist membership if logged in.
+ */
+
 session_start();
 require("../connect.php");
 require("../image_handler.php");
 
+// Require movie ID parameter in URL
 if (!isset($_GET['id'])) {
     header("Location: browse.php");
     exit();
 }
 
+// Cast movie ID to integer for safety
 $movie_id = (int)$_GET['id'];
 
-// Get movie details
+// Retrieve basic movie information from database
 $sql = "SELECT * FROM movies WHERE movie_id = $movie_id";
 $result = myQuery($sql);
+
+// Redirect if movie doesn't exist
 if (mysqli_num_rows($result) == 0) {
     header("Location: browse.php");
     exit();
 }
 $movie = mysqli_fetch_assoc($result);
 
-// Get genres
+// Retrieve all genres associated with this movie
+// JOIN with genres table to get genre names
 $genres_sql = "SELECT g.genre_id, g.genre_name FROM movie_genres mg 
                JOIN genres g ON mg.genre_id = g.genre_id 
                WHERE mg.movie_id = $movie_id";
 $genres_result = myQuery($genres_sql);
 
-// Get cast (top 10)
+// Retrieve cast members for this movie
+// Limits to top 10 cast members ordered by cast_order (billing order)
+// Includes character name played by each cast member
 $cast_sql = "SELECT cm.*, mc.character_name, mc.cast_order 
              FROM movie_cast mc 
              JOIN cast_members cm ON mc.cast_id = cm.cast_id 
@@ -34,7 +47,9 @@ $cast_sql = "SELECT cm.*, mc.character_name, mc.cast_order
              LIMIT 10";
 $cast_result = myQuery($cast_sql);
 
-// Get crew
+// Retrieve crew members for this movie
+// Includes role information (director, producer, etc.)
+// Ordered by role for consistent display
 $crew_sql = "SELECT crm.*, mc.role 
              FROM movie_crew mc 
              JOIN crew_members crm ON mc.crew_id = crm.crew_id 
@@ -42,11 +57,14 @@ $crew_sql = "SELECT crm.*, mc.role
              ORDER BY mc.role";
 $crew_result = myQuery($crew_sql);
 
-// Get trailers
+// Retrieve movie trailers
+// Can include multiple trailers (teaser, official, behind scenes)
 $trailer_sql = "SELECT * FROM movie_trailers WHERE movie_id = $movie_id";
 $trailer_result = myQuery($trailer_sql);
 
-// Get reviews (paginated)
+// Retrieve reviews with pagination
+// Only shows non-flagged reviews to users
+// Orders by like count (most liked first), then by creation date
 $review_page = isset($_GET['review_page']) ? (int)$_GET['review_page'] : 1;
 $reviews_per_page = 5;
 $review_offset = ($review_page - 1) * $reviews_per_page;
@@ -59,29 +77,33 @@ $review_sql = "SELECT r.*, u.username, u.profile_avatar
                LIMIT $reviews_per_page OFFSET $review_offset";
 $review_result = myQuery($review_sql);
 
-// Get total reviews count
+// Calculate total review count for pagination
+// Only counts non-flagged reviews
 $review_count_sql = "SELECT COUNT(*) as total FROM reviews WHERE movie_id = $movie_id AND is_flagged = FALSE";
 $review_count_result = myQuery($review_count_sql);
 $total_reviews = mysqli_fetch_assoc($review_count_result)['total'];
 $total_review_pages = ceil($total_reviews / $reviews_per_page);
 
-// Check if user has reviewed this movie
+// Check user-specific data if logged in
 $user_review = null;
 if (isset($_SESSION['user_id'])) {
+    // Check if current user has already reviewed this movie
+    // Used to show edit review option instead of submit new review
     $user_review_sql = "SELECT * FROM reviews WHERE movie_id = $movie_id AND user_id = " . $_SESSION['user_id'];
     $user_review_result = myQuery($user_review_sql);
     if (mysqli_num_rows($user_review_result) > 0) {
         $user_review = mysqli_fetch_assoc($user_review_result);
     }
     
-    // Check if movie is in user's watchlists
+    // Check which watchlists contain this movie
+    // LEFT JOIN shows all user watchlists, with movie_id if movie is in that watchlist
     $watchlist_sql = "SELECT w.watchlist_id, w.watchlist_name, wm.movie_id 
                       FROM watchlists w 
                       LEFT JOIN watchlist_movies wm ON w.watchlist_id = wm.watchlist_id AND wm.movie_id = $movie_id
                       WHERE w.user_id = " . $_SESSION['user_id'];
     $watchlist_result = myQuery($watchlist_sql);
     
-    // Check if movie is favorited
+    // Check if movie is in user's favorites
     $favorite_sql = "SELECT favorite_id FROM favorites 
                     WHERE user_id = " . $_SESSION['user_id'] . " 
                     AND entity_type = 'movie' 
@@ -89,16 +111,41 @@ if (isset($_SESSION['user_id'])) {
     $favorite_result = myQuery($favorite_sql);
     $is_favorited = mysqli_num_rows($favorite_result) > 0;
     
-    // Check if movie is watched
+    // Check if movie is marked as watched by user
     $watched_sql = "SELECT * FROM user_watched_movies 
                    WHERE user_id = " . $_SESSION['user_id'] . " 
                    AND movie_id = $movie_id";
     $watched_result = myQuery($watched_sql);
     $is_watched = mysqli_num_rows($watched_result) > 0;
+    
+    // Get list of review IDs that the current user has liked
+    // This is used to show which reviews the user has already liked
+    // First, collect all review IDs from the current page
+    $review_ids = [];
+    mysqli_data_seek($review_result, 0); // Reset pointer to beginning
+    while ($rev = mysqli_fetch_assoc($review_result)) {
+        $review_ids[] = $rev['review_id'];
+    }
+    mysqli_data_seek($review_result, 0); // Reset again for display loop
+    
+    // Query which of these reviews the user has liked
+    $liked_reviews = [];
+    if (!empty($review_ids)) {
+        $review_ids_str = implode(',', array_map('intval', $review_ids));
+        $liked_sql = "SELECT review_id FROM review_likes 
+                     WHERE user_id = " . $_SESSION['user_id'] . " 
+                     AND review_id IN ($review_ids_str)";
+        $liked_result = myQuery($liked_sql);
+        while ($liked = mysqli_fetch_assoc($liked_result)) {
+            $liked_reviews[] = $liked['review_id'];
+        }
+    }
 } else {
+    // Set defaults for non-logged-in users
     $watchlist_result = null;
     $is_favorited = false;
     $is_watched = false;
+    $liked_reviews = [];
 }
 ?>
 <!DOCTYPE html>
@@ -489,9 +536,17 @@ if (isset($_SESSION['user_id'])) {
                                            class="w-full px-3 py-2 bg-gray-800 border-2 border-gray-600 rounded-lg text-gray-100 focus:border-red-500 focus:ring-2 focus:ring-red-500 transition-all duration-300">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="block text-sm font-medium mb-1 text-gray-300">Review (50-1000 characters):</label>
-                                    <textarea name="review_text" rows="4" required 
+                                    <label class="block text-sm font-medium mb-1 text-gray-300">Review (2-1000 characters):</label>
+                                    <textarea name="review_text" id="edit_review_text" rows="4" required maxlength="1000"
                                               class="w-full px-3 py-2 bg-gray-800 border-2 border-gray-600 rounded-lg text-gray-100 focus:border-red-500 focus:ring-2 focus:ring-red-500 transition-all duration-300"><?php echo htmlspecialchars($user_review['review_text']); ?></textarea>
+                                    <div class="mt-1 text-xs text-gray-400 flex justify-between">
+                                        <span id="edit_review_counter" class="<?php echo strlen($user_review['review_text']) < 2 ? 'text-red-400' : (strlen($user_review['review_text']) > 1000 ? 'text-red-400' : ''); ?>">
+                                            <?php echo strlen($user_review['review_text']); ?> / 1000 characters
+                                        </span>
+                                        <span class="<?php echo strlen($user_review['review_text']) < 2 ? 'text-red-400' : ''; ?>">
+                                            Minimum: 2 characters
+                                        </span>
+                                    </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="flex items-center text-gray-300">
@@ -524,9 +579,13 @@ if (isset($_SESSION['user_id'])) {
                                        class="w-full px-3 py-2 bg-gray-800 border-2 border-gray-600 rounded-lg text-gray-100 focus:border-red-500 focus:ring-2 focus:ring-red-500 transition-all duration-300">
                             </div>
                             <div class="mb-3">
-                                <label class="block text-sm font-medium mb-1 text-gray-300">Review (50-1000 characters):</label>
-                                <textarea name="review_text" rows="4" required 
+                                <label class="block text-sm font-medium mb-1 text-gray-300">Review (2-1000 characters):</label>
+                                <textarea name="review_text" id="new_review_text" rows="4" required maxlength="1000"
                                           class="w-full px-3 py-2 bg-gray-800 border-2 border-gray-600 rounded-lg text-gray-100 focus:border-red-500 focus:ring-2 focus:ring-red-500 transition-all duration-300"></textarea>
+                                <div class="mt-1 text-xs text-gray-400 flex justify-between">
+                                    <span id="new_review_counter">0 / 1000 characters</span>
+                                    <span>Minimum: 2 characters</span>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label class="flex items-center text-gray-300">
@@ -566,7 +625,7 @@ if (isset($_SESSION['user_id'])) {
                                     ?>
                                     <div class="w-10 h-10 <?php echo $review['profile_avatar'] ? 'bg-gray-700' : $review_avatar_color; ?> rounded-full mr-3 flex items-center justify-center border border-gray-600">
                                         <?php if ($review['profile_avatar']): ?>
-                                            <img src="<?php echo htmlspecialchars($review['profile_avatar']); ?>" 
+                                            <img src="<?php echo htmlspecialchars(getImagePath($review['profile_avatar'], 'avatar')); ?>" 
                                                  alt="<?php echo htmlspecialchars($review['username']); ?>"
                                                  class="w-full h-full object-cover rounded-full">
                                         <?php else: ?>
@@ -603,12 +662,25 @@ if (isset($_SESSION['user_id'])) {
                             <?php endif; ?>
                             <p class="text-gray-300 mb-2"><?php echo nl2br(htmlspecialchars($review['review_text'])); ?></p>
                             <div class="flex items-center space-x-4 text-sm">
-                                <form method="post" action="../reviews/like.php" class="inline">
-                                    <input type="hidden" name="review_id" value="<?php echo $review['review_id']; ?>">
-                                    <button type="submit" class="text-red-400 hover:text-red-300 hover:underline transition-colors duration-300">
-                                        👍 Helpful (<?php echo $review['like_count']; ?>)
-                                    </button>
-                                </form>
+                                <?php 
+                                // Check if current user has liked this review
+                                $is_liked = isset($_SESSION['user_id']) && in_array($review['review_id'], $liked_reviews);
+                                // Check if this is the user's own review
+                                $is_own_review = isset($_SESSION['user_id']) && $_SESSION['user_id'] == $review['user_id'];
+                                ?>
+                                <?php if (!$is_own_review): ?>
+                                    <form method="post" action="../reviews/like.php" class="inline">
+                                        <input type="hidden" name="review_id" value="<?php echo $review['review_id']; ?>">
+                                        <button type="submit" class="<?php echo $is_liked ? 'text-green-400 hover:text-green-300' : 'text-red-400 hover:text-red-300'; ?> hover:underline transition-colors duration-300 flex items-center gap-1">
+                                            <?php if ($is_liked): ?>
+                                                <span>✓</span>
+                                            <?php else: ?>
+                                                <span>👍</span>
+                                            <?php endif; ?>
+                                            <span>Helpful (<?php echo $review['like_count']; ?>)</span>
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
                                 <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != $review['user_id']): ?>
                                     <form method="post" action="../reviews/report.php" class="inline">
                                         <input type="hidden" name="review_id" value="<?php echo $review['review_id']; ?>">
@@ -831,6 +903,46 @@ if (isset($_SESSION['user_id'])) {
                     closeWatchlistModal();
                 }
             }
+        });
+        
+        // Character counter for review textareas
+        function setupReviewCounter(textareaId, counterId) {
+            const textarea = document.getElementById(textareaId);
+            const counter = document.getElementById(counterId);
+            
+            if (!textarea || !counter) return;
+            
+            function updateCounter() {
+                const length = textarea.value.length;
+                const maxLength = 1000;
+                const minLength = 2;
+                
+                // Update counter text
+                counter.textContent = length + ' / ' + maxLength + ' characters';
+                
+                // Update styling based on length
+                if (length < minLength) {
+                    counter.classList.add('text-red-400');
+                    counter.classList.remove('text-gray-400', 'text-yellow-400');
+                } else if (length > maxLength * 0.9) {
+                    counter.classList.add('text-yellow-400');
+                    counter.classList.remove('text-gray-400', 'text-red-400');
+                } else {
+                    counter.classList.add('text-gray-400');
+                    counter.classList.remove('text-red-400', 'text-yellow-400');
+                }
+            }
+            
+            // Update on input
+            textarea.addEventListener('input', updateCounter);
+            // Initial update
+            updateCounter();
+        }
+        
+        // Setup counters when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setupReviewCounter('new_review_text', 'new_review_counter');
+            setupReviewCounter('edit_review_text', 'edit_review_counter');
         });
     </script>
     <?php endif; ?>

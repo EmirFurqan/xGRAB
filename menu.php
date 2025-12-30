@@ -1,8 +1,14 @@
 <?php
+/**
+ * User Dashboard Menu
+ * Main navigation hub for logged-in users.
+ * Provides quick access to movies, profile, watchlists, and admin panel (if admin).
+ */
+
 session_start();
 require("connect.php");
 
-// Check if user is logged in
+// Verify user is logged in before showing dashboard
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();

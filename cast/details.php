@@ -1,8 +1,15 @@
 <?php
+/**
+ * Cast Member Details Page
+ * Displays comprehensive information about a cast member including their filmography.
+ * Shows all movies the cast member has appeared in with character names.
+ */
+
 session_start();
 require("../connect.php");
 require("../image_handler.php");
 
+// Validate cast member ID parameter
 if (!isset($_GET['id'])) {
     header("Location: ../movies/browse.php");
     exit();
@@ -10,7 +17,7 @@ if (!isset($_GET['id'])) {
 
 $cast_id = (int) $_GET['id'];
 
-// Get cast member details
+// Retrieve cast member basic information
 $cast_sql = "SELECT * FROM cast_members WHERE cast_id = $cast_id";
 $cast_result = myQuery($cast_sql);
 if (mysqli_num_rows($cast_result) == 0) {
@@ -19,7 +26,10 @@ if (mysqli_num_rows($cast_result) == 0) {
 }
 $cast_member = mysqli_fetch_assoc($cast_result);
 
-// Get movies this cast member appeared in
+// Retrieve all movies this cast member has appeared in
+// JOINs with movies table to get full movie information
+// Includes character_name and cast_order from movie_cast junction table
+// Ordered by release year (newest first), then by cast_order (billing order)
 $movies_sql = "SELECT m.*, mc.character_name, mc.cast_order
                FROM movie_cast mc
                JOIN movies m ON mc.movie_id = m.movie_id
@@ -27,12 +37,12 @@ $movies_sql = "SELECT m.*, mc.character_name, mc.cast_order
                ORDER BY m.release_year DESC, mc.cast_order ASC";
 $movies_result = myQuery($movies_sql);
 
-// Get total movie count
+// Calculate total number of movies this cast member has appeared in
 $movie_count_sql = "SELECT COUNT(*) as total FROM movie_cast WHERE cast_id = $cast_id";
 $movie_count_result = myQuery($movie_count_sql);
 $total_movies = mysqli_fetch_assoc($movie_count_result)['total'];
 
-// Check if cast member is favorited (if user is logged in)
+// Check if cast member is in user's favorites (if logged in)
 $is_favorited = false;
 if (isset($_SESSION['user_id'])) {
     $favorite_sql = "SELECT favorite_id FROM favorites 
@@ -43,7 +53,9 @@ if (isset($_SESSION['user_id'])) {
     $is_favorited = mysqli_num_rows($favorite_result) > 0;
 }
 
-// Avatar colors for cast member (if no photo)
+// Generate consistent avatar background color based on cast member name
+// Uses CRC32 hash to convert name to number, then modulo to select color
+// This ensures the same name always gets the same color
 $avatar_colors = [
     'bg-red-500',
     'bg-red-600',
@@ -64,6 +76,7 @@ $avatar_colors = [
 ];
 $color_index = crc32($cast_member['name']) % count($avatar_colors);
 $avatar_color = $avatar_colors[$color_index];
+// Extract first letter of name for avatar fallback (handles UTF-8 characters)
 $cast_initial = mb_strtoupper(mb_substr($cast_member['name'], 0, 1, 'UTF-8'));
 ?>
 <!DOCTYPE html>

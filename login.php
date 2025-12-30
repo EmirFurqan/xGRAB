@@ -1,51 +1,78 @@
 <?php
+/**
+ * User Login Page
+ * Handles user authentication with login attempt tracking and session management.
+ * Implements basic brute-force protection by locking accounts after 5 failed attempts.
+ */
+
 session_start();
 require("connect.php");
 $error = "";
 
-// Check if already logged in
+// Redirect users who are already logged in to prevent duplicate sessions
+// This improves user experience by skipping unnecessary login steps
 if (isset($_SESSION['user_id'])) {
     header("Location: menu.php");
     exit();
 }
 
-// Handle failed login attempts
+// Initialize login attempt tracking in session if not already set
+// This tracks failed login attempts to prevent brute-force attacks
 if (!isset($_SESSION['login_attempts'])) {
     $_SESSION['login_attempts'] = 0;
     $_SESSION['login_attempt_time'] = time();
 }
 
-// Reset attempts after 15 minutes
+// Reset login attempt counter after 15 minutes (900 seconds) have passed
+// This allows users to try again after the lockout period expires
 if (isset($_SESSION['login_attempt_time']) && (time() - $_SESSION['login_attempt_time']) > 900) {
     $_SESSION['login_attempts'] = 0;
     $_SESSION['login_attempt_time'] = time();
 }
 
+// Process login form submission
 if (isset($_POST['submit'])) {
-    // Check if account is locked
+    // Check if account is temporarily locked due to too many failed attempts
+    // Lock threshold is set to 5 failed attempts
     if ($_SESSION['login_attempts'] >= 5) {
         $error = "Account temporarily locked. Please try again in 15 minutes.";
     } else {
+        // Sanitize email input to prevent SQL injection
         $email = escapeString($_POST['email']);
-        $password = md5($_POST['password']); // MD5 hashing
+        
+        // Hash password using MD5 to match stored password format
+        // Note: MD5 is not cryptographically secure; consider upgrading to bcrypt or Argon2
+        $password = md5($_POST['password']);
 
+        // Query database to find user with matching email and password
+        // This query checks both email and password_hash in a single operation
         $sql = "SELECT * FROM users WHERE email = '$email' AND password_hash = '$password'";
         $res = myQuery($sql);
 
+        // Verify exactly one user was found (successful login)
         if (mysqli_num_rows($res) == 1) {
+            // Fetch user data from query result
             $row = mysqli_fetch_assoc($res);
+            
+            // Store user information in session for use across the application
             $_SESSION['user_id'] = $row['user_id'];
             $_SESSION['username'] = $row['username'];
             $_SESSION['email'] = $row['email'];
-            // Convert is_admin to proper boolean (MySQL BOOLEAN returns 0/1 as int)
+            
+            // Convert MySQL BOOLEAN (stored as 0/1) to PHP boolean type
+            // This ensures proper boolean evaluation in conditional statements
             $_SESSION['is_admin'] = (bool) $row['is_admin'];
 
-            // Reset login attempts on success
+            // Reset login attempt counter on successful login
+            // This clears any previous failed attempts
             $_SESSION['login_attempts'] = 0;
 
+            // Redirect to main menu after successful authentication
             header("Location: menu.php");
             exit();
         } else {
+            // Increment failed login attempt counter
+            // Update timestamp to track when lockout period should expire
             $_SESSION['login_attempts']++;
             $_SESSION['login_attempt_time'] = time();
             $error = "Invalid email or password";

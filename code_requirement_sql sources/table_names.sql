@@ -246,3 +246,16 @@ CREATE TABLE IF NOT EXISTS user_watched_movies (
     INDEX idx_movie (movie_id),
     INDEX idx_watched_date (watched_date)
 );
+
+
+CREATE TABLE IF NOT EXISTS review_likes (
+    like_id INT PRIMARY KEY AUTO_INCREMENT,
+    review_id INT NOT NULL,
+    user_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_review_like (user_id, review_id),
+    INDEX idx_review (review_id),
+    INDEX idx_user (user_id)
+);

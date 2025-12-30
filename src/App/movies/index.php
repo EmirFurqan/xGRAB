@@ -1,27 +1,36 @@
 <?php
+/**
+ * Movie Listing Page (src/App directory)
+ * Alternative movie browsing page with search and genre filtering.
+ * This is an alternative implementation to the root movies/browse.php.
+ */
+
 require_once '../../Core/connect.php';
 
-// Initialize variables for filtering
+// Initialize variables for dynamic filtering
 $where_clauses = [];
 $params = [];
 $types = "";
-$filter_title = "All Movies"; // Default title
+$filter_title = "All Movies"; // Default page title
 
-// 1. CHECK FOR SEARCH PARAMETER
+// Check for search parameter in URL
+// Allows users to search movies by title
 if (isset($_GET['search']) && !empty($_GET['search'])) {
-    // Sanitize input
+    // Sanitize search input to prevent SQL injection
+    // Note: This uses $conn which may not be defined if using myQuery()
     $search_term = $conn->real_escape_string($_GET['search']);
     $where_clauses[] = "m.title LIKE '%$search_term%'";
     $filter_title = "Search Results for: \"" . htmlspecialchars($_GET['search']) . "\"";
 }
 
-// 2. CHECK FOR GENRE FILTER
+// Check for genre filter parameter
+// Allows users to filter movies by specific genre
 if (isset($_GET['genre_id']) && !empty($_GET['genre_id'])) {
     $genre_id = intval($_GET['genre_id']);
-    // We need to filter by the junction table
+    // Filter using movie_genres junction table to find movies with this genre
     $where_clauses[] = "mg.genre_id = $genre_id";
     
-    // Get genre name for the page title
+    // Retrieve genre name for display in page title
     $g_sql = "SELECT genre_name FROM genres WHERE genre_id = $genre_id";
     $g_res = myQuery($g_sql);
     if($g_row = $g_res->fetch_assoc()) {
@@ -29,13 +38,17 @@ if (isset($_GET['genre_id']) && !empty($_GET['genre_id'])) {
     }
 }
 
-// Build the WHERE string
+// Build WHERE clause string from collected conditions
+// Joins multiple conditions with AND operator
 $where_sql = "";
 if (count($where_clauses) > 0) {
     $where_sql = " WHERE " . implode(" AND ", $where_clauses);
 }
 
-// 3. MAIN QUERY
+// Main query to retrieve movies with genre information
+// Uses GROUP_CONCAT to combine multiple genres into comma-separated string
+// LEFT JOINs ensure movies without genres are still included
+// Orders by average rating (highest first), then by creation date
 $sql = "SELECT 
             m.movie_id, 
             m.title, 

@@ -1,10 +1,17 @@
 <?php
+/**
+ * Watchlist Index Page (src/App directory)
+ * Alternative watchlist management page implementation.
+ * Displays user watchlists with movie counts and handles watchlist creation.
+ * This is an alternative implementation to the root watchlist/index.php.
+ */
+
 session_start();
 require_once '../../Core/connect.php';
 
-// 1. SECURITY: Strict Check
+// Verify user is logged in before showing watchlists
 if (!isset($_SESSION['user_id'])) {
-    // Redirect to your auth endpoint
+    // Redirect to authentication endpoint
     header("Location: http://10.1.7.100:7777/auth.gr2025-022.com.php?mode=login");
     exit;
 }
@@ -12,15 +19,18 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $message = "";
 
-// 2. HANDLE "CREATE NEW LIST"
+// Handle watchlist creation from form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['new_list_name'])) {
+    // Sanitize watchlist name input
     $list_name = addslashes($_POST['new_list_name']);
     if (!empty($list_name)) {
-        // Check if list name already exists for this user
+        // Check if user already has a watchlist with this name
+        // Prevents duplicate watchlist names for the same user
         $check = myQuery("SELECT watchlist_id FROM watchlists WHERE user_id = $user_id AND watchlist_name = '$list_name'");
         if ($check->num_rows > 0) {
             $message = "You already have a list with that name.";
         } else {
+            // Create new watchlist with current timestamp
             $sql_create = "INSERT INTO watchlists (user_id, watchlist_name, date_created) VALUES ($user_id, '$list_name', NOW())";
             myQuery($sql_create);
             $message = "List created successfully!";
@@ -28,7 +38,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['new_list_name'])) {
     }
 }
 
-// 3. FETCH WATCHLISTS
+// Retrieve all watchlists for the current user
+// LEFT JOIN with watchlist_movies to count movies in each watchlist
+// GROUP BY ensures each watchlist appears once with its movie count
+// Ordered by creation date (newest first)
 $sql = "SELECT w.watchlist_id, w.watchlist_name, w.date_created, COUNT(wm.movie_id) as item_count 
         FROM watchlists w
         LEFT JOIN watchlist_movies wm ON w.watchlist_id = wm.watchlist_id

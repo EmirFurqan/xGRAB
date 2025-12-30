@@ -1,11 +1,19 @@
 <?php
+/**
+ * Edit Movie Page (Admin)
+ * Allows administrators to update existing movie information.
+ * Handles movie data updates and genre reassignment.
+ */
+
 session_start();
 require("../../connect.php");
 
+// Verify user has admin privileges
 if (!isset($_SESSION['user_id']) || !$_SESSION['is_admin']) {
     die("Access Denied");
 }
 
+// Validate movie ID parameter
 if (!isset($_GET['id'])) {
     header("Location: ../dashboard.php");
     exit();
@@ -15,7 +23,7 @@ $movie_id = (int) $_GET['id'];
 $error = "";
 $success = "";
 
-// Get movie info
+// Retrieve current movie information for form pre-population
 $movie_sql = "SELECT * FROM movies WHERE movie_id = $movie_id";
 $movie_result = myQuery($movie_sql);
 if (mysqli_num_rows($movie_result) == 0) {
@@ -24,7 +32,8 @@ if (mysqli_num_rows($movie_result) == 0) {
 }
 $movie = mysqli_fetch_assoc($movie_result);
 
-// Get current genres
+// Retrieve current genre associations for this movie
+// Used to pre-select genres in the edit form
 $current_genres_sql = "SELECT genre_id FROM movie_genres WHERE movie_id = $movie_id";
 $current_genres_result = myQuery($current_genres_sql);
 $current_genre_ids = [];
@@ -32,11 +41,13 @@ while ($row = mysqli_fetch_assoc($current_genres_result)) {
     $current_genre_ids[] = $row['genre_id'];
 }
 
-// Get all genres
+// Retrieve all available genres for selection
 $genres_sql = "SELECT * FROM genres ORDER BY genre_name";
 $genres_result = myQuery($genres_sql);
 
+// Process movie update form submission
 if (isset($_POST['submit'])) {
+    // Extract and sanitize form data
     $title = escapeString($_POST['title']);
     $release_year = (int) $_POST['release_year'];
     $description = escapeString($_POST['description']);
@@ -47,10 +58,11 @@ if (isset($_POST['submit'])) {
     $original_language = escapeString($_POST['original_language']);
     $selected_genres = isset($_POST['genres']) ? $_POST['genres'] : [];
 
+    // Validate required fields
     if (empty($title) || empty($release_year)) {
         $error = "Title and release year are required";
     } else {
-        // Update movie
+        // Update movie record with new information
         $update_sql = "UPDATE movies SET 
                        title = '$title',
                        release_year = $release_year,
@@ -63,12 +75,13 @@ if (isset($_POST['submit'])) {
                        WHERE movie_id = $movie_id";
 
         if (myQuery($update_sql)) {
-            // Update genres
-            // Delete existing genres
+            // Update genre associations
+            // First, delete all existing genre associations
+            // This allows complete genre replacement
             $delete_genres_sql = "DELETE FROM movie_genres WHERE movie_id = $movie_id";
             myQuery($delete_genres_sql);
 
-            // Add new genres
+            // Then, insert new genre associations
             if (!empty($selected_genres)) {
                 foreach ($selected_genres as $genre_id) {
                     $genre_id = (int) $genre_id;
@@ -77,14 +90,14 @@ if (isset($_POST['submit'])) {
                 }
             }
 
-            // Log admin action
+            // Log admin action for audit trail
             $admin_id = $_SESSION['user_id'];
             $log_sql = "INSERT INTO admin_logs (admin_id, action_type, target_type, target_id, description) 
                         VALUES ($admin_id, 'movie_update', 'movie', $movie_id, 'Updated movie: $title')";
             myQuery($log_sql);
 
             $success = "Movie updated successfully!";
-            // Reload movie data
+            // Reload movie data to reflect changes
             $movie_result = myQuery($movie_sql);
             $movie = mysqli_fetch_assoc($movie_result);
         } else {

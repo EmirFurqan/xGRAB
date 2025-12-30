@@ -1,7 +1,14 @@
 <?php
+/**
+ * Review Moderation Page (Admin)
+ * Allows administrators to review and moderate flagged reviews.
+ * Supports approving (unflagging) or removing inappropriate reviews.
+ */
+
 session_start();
 require("../../connect.php");
 
+// Verify user has admin privileges
 if (!isset($_SESSION['user_id']) || !$_SESSION['is_admin']) {
     die("Access Denied");
 }
@@ -9,21 +16,23 @@ if (!isset($_SESSION['user_id']) || !$_SESSION['is_admin']) {
 $error = "";
 $success = "";
 
-// Handle approve/remove action
+// Process moderation actions (approve or remove)
 if (isset($_POST['action'])) {
     $review_id = (int) $_POST['review_id'];
     $action = escapeString($_POST['action']);
 
     if ($action == 'approve') {
-        // Unflag review
+        // Approve review: unflag it and reset report count
+        // This makes the review visible to users again
         $update_sql = "UPDATE reviews SET is_flagged = FALSE, report_count = 0 WHERE review_id = $review_id";
         myQuery($update_sql);
 
-        // Delete reports
+        // Delete all reports for this review since it's been approved
+        // This clears the report history for the approved review
         $delete_reports_sql = "DELETE FROM review_reports WHERE review_id = $review_id";
         myQuery($delete_reports_sql);
 
-        // Log action
+        // Log admin action for audit trail
         $admin_id = $_SESSION['user_id'];
         $log_sql = "INSERT INTO admin_logs (admin_id, action_type, target_type, target_id, description) 
                     VALUES ($admin_id, 'review_approve', 'review', $review_id, 'Approved flagged review')";
@@ -31,11 +40,12 @@ if (isset($_POST['action'])) {
 
         $success = "Review approved and unflagged";
     } elseif ($action == 'remove') {
-        // Delete review
+        // Remove review: permanently delete it from database
+        // CASCADE will handle deletion of related review_reports records
         $delete_sql = "DELETE FROM reviews WHERE review_id = $review_id";
         myQuery($delete_sql);
 
-        // Log action
+        // Log admin action for audit trail
         $admin_id = $_SESSION['user_id'];
         $log_sql = "INSERT INTO admin_logs (admin_id, action_type, target_type, target_id, description) 
                     VALUES ($admin_id, 'review_removal', 'review', $review_id, 'Removed flagged review')";
@@ -45,7 +55,9 @@ if (isset($_POST['action'])) {
     }
 }
 
-// Get flagged reviews
+// Retrieve all flagged reviews for moderation
+// JOINs with users and movies tables to get context information
+// Orders by report count (most reported first) then by creation date
 $reviews_sql = "SELECT r.*, u.username, u.email, m.title as movie_title, m.movie_id
                 FROM reviews r
                 JOIN users u ON r.user_id = u.user_id

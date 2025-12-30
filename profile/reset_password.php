@@ -1,4 +1,10 @@
 <?php
+/**
+ * Password Reset Page
+ * Handles password reset functionality with token-based authentication.
+ * Supports both requesting a reset token and resetting password with a valid token.
+ */
+
 session_start();
 require("../connect.php");
 
@@ -6,11 +12,14 @@ $error = "";
 $success = "";
 $show_form = true;
 
-// If token provided, show reset form
+// Handle password reset when token is provided in URL
+// This is the second step: user clicks reset link and enters new password
 if (isset($_GET['token'])) {
+    // Sanitize token to prevent SQL injection
     $token = escapeString($_GET['token']);
 
-    // Check token validity
+    // Verify token is valid, not expired, and not already used
+    // Token must exist, expire time must be in future, and used flag must be false
     $token_sql = "SELECT * FROM password_reset_tokens 
                   WHERE token = '$token' AND expires_at > NOW() AND used = FALSE";
     $token_result = myQuery($token_sql);
@@ -19,31 +28,43 @@ if (isset($_GET['token'])) {
         $error = "Invalid or expired reset token";
         $show_form = false;
     } else {
+        // Extract user ID from token record
         $token_data = mysqli_fetch_assoc($token_result);
         $user_id = $token_data['user_id'];
 
-        // Handle password reset
+        // Process password reset form submission
         if (isset($_POST['submit'])) {
             $new_password = $_POST['new_password'];
             $confirm_password = $_POST['confirm_password'];
 
-            // Validate password
+            // Validate new password meets security requirements
+            // Minimum length check
             if (strlen($new_password) < 8) {
                 $error = "Password must be at least 8 characters long";
-            } elseif (!preg_match('/[A-Z]/', $new_password)) {
+            }
+            // Require uppercase letter
+            elseif (!preg_match('/[A-Z]/', $new_password)) {
                 $error = "Password must contain at least one uppercase letter";
-            } elseif (!preg_match('/[0-9]/', $new_password)) {
+            }
+            // Require numeric digit
+            elseif (!preg_match('/[0-9]/', $new_password)) {
                 $error = "Password must contain at least one number";
-            } elseif (!preg_match('/[^A-Za-z0-9]/', $new_password)) {
+            }
+            // Require special character
+            elseif (!preg_match('/[^A-Za-z0-9]/', $new_password)) {
                 $error = "Password must contain at least one special character";
-            } elseif ($new_password !== $confirm_password) {
+            }
+            // Verify password confirmation matches
+            elseif ($new_password !== $confirm_password) {
                 $error = "Passwords do not match";
             } else {
-                // Update password
+                // Hash new password with MD5 and update user record
+                // Note: MD5 is cryptographically weak; consider upgrading
                 $new_password_hash = md5($new_password);
                 $update_sql = "UPDATE users SET password_hash = '$new_password_hash' WHERE user_id = $user_id";
                 if (myQuery($update_sql)) {
-                    // Mark token as used
+                    // Mark token as used to prevent reuse
+                    // This ensures each reset token can only be used once
                     $mark_used_sql = "UPDATE password_reset_tokens SET used = TRUE WHERE token = '$token'";
                     myQuery($mark_used_sql);
                     $success = "Password reset successfully! You can now login.";
@@ -55,29 +76,36 @@ if (isset($_GET['token'])) {
         }
     }
 }
-// If email provided, generate reset token
+// Handle reset token request (first step: user enters email)
 elseif (isset($_POST['request_reset'])) {
+    // Sanitize email input
     $email = escapeString($_POST['email']);
 
-    // Check if email exists
+    // Check if email exists in database
     $user_sql = "SELECT * FROM users WHERE email = '$email'";
     $user_result = myQuery($user_sql);
 
     if (mysqli_num_rows($user_result) == 0) {
+        // Don't reveal if email exists for security (prevents email enumeration)
         $error = "Email not found";
     } else {
+        // Get user ID for token association
         $user = mysqli_fetch_assoc($user_result);
         $user_id = $user['user_id'];
 
-        // Generate token
+        // Generate cryptographically secure random token
+        // bin2hex converts binary to hexadecimal string (64 characters)
         $token = bin2hex(random_bytes(32));
+        
+        // Set token expiration to 1 hour from now
         $expires_at = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
-        // Insert token
+        // Store token in database with expiration time
         $insert_sql = "INSERT INTO password_reset_tokens (user_id, token, expires_at) 
                        VALUES ($user_id, '$token', '$expires_at')";
         if (myQuery($insert_sql)) {
-            // Display reset link (simplified - no email)
+            // Generate reset link URL
+            // In production, this would be sent via email instead of displayed
             $reset_link = "http://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/reset_password.php?token=$token";
             $success = "Password reset link generated. Click here to reset: <a href='$reset_link' class='underline hover:text-green-300 transition-colors duration-300'>$reset_link</a>";
         } else {

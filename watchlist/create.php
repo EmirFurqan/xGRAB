@@ -1,7 +1,14 @@
 <?php
+/**
+ * Create Watchlist Page
+ * Allows users to create a new watchlist with a custom name.
+ * Validates watchlist name length and redirects to watchlist index on success.
+ */
+
 session_start();
 require("../connect.php");
 
+// Require user to be logged in to create watchlists
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
@@ -11,17 +18,25 @@ $user_id = $_SESSION['user_id'];
 $error = "";
 $success = "";
 
+// Process watchlist creation form submission
 if (isset($_POST['submit'])) {
+    // Sanitize watchlist name input
     $watchlist_name = escapeString($_POST['watchlist_name']);
 
+    // Validate watchlist name is not empty
     if (empty($watchlist_name)) {
         $error = "Watchlist name is required";
-    } elseif (strlen($watchlist_name) > 50) {
+    }
+    // Validate watchlist name doesn't exceed database column limit (50 characters)
+    elseif (strlen($watchlist_name) > 50) {
         $error = "Watchlist name must be 50 characters or less";
     } else {
+        // Insert new watchlist into database
+        // date_created will be set automatically via DEFAULT CURRENT_TIMESTAMP
         $insert_sql = "INSERT INTO watchlists (user_id, watchlist_name) VALUES ($user_id, '$watchlist_name')";
         if (myQuery($insert_sql)) {
             $success = "Watchlist created successfully!";
+            // Redirect to watchlist index page with success message
             header("Location: index.php?success=" . urlencode($success));
             exit();
         } else {

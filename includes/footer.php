@@ -1,13 +1,21 @@
 <?php
-// Determine base path for links based on current directory
+/**
+ * Reusable Footer Component
+ * Provides consistent footer across all pages with navigation links and copyright.
+ * Automatically adjusts link paths based on current directory depth.
+ * Usage: require("includes/footer.php"); or require("../includes/footer.php");
+ */
+
+// Determine base path for footer links based on current directory
 // This logic mirrors includes/nav.php to ensure consistency
 $base_path = "";
 $script_path = $_SERVER['PHP_SELF'];
 
-// Normalize path separators
+// Normalize path separators to forward slashes for cross-platform compatibility
 $script_path = str_replace('\\', '/', $script_path);
 
-// Determine depth
+// Detect directory depth and set appropriate base path
+// Two-level deep directories (e.g., admin/users/, admin/movies/) need "../../"
 if (
     strpos($script_path, '/admin/users/') !== false ||
     strpos($script_path, '/admin/movies/') !== false ||
@@ -25,6 +33,7 @@ if (
     strpos($script_path, '/watched/') !== false ||
     strpos($script_path, '/auth/') !== false
 ) {
+    // First-level subdirectories need one level up
     $base_path = "../";
 }
 ?>

@@ -9,6 +9,9 @@
 </head>
 
 <body class="bg-gray-900">
+    <!-- Admin Entry Point -->
+    <!-- This is a simple placeholder page for the admin section. -->
+    <!-- The main admin functionality is in admin/dashboard.php -->
     Admin Page
 </body>
 

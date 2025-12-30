@@ -1,8 +1,15 @@
 <?php
+/**
+ * Watched Movies Index Page
+ * Displays all movies the user has marked as watched.
+ * Supports sorting and pagination for large watched lists.
+ */
+
 session_start();
 require("../connect.php");
 require("../image_handler.php");
 
+// Require user to be logged in to view watched movies
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
@@ -10,14 +17,15 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Get sort parameters
+// Extract and sanitize sorting and pagination parameters from URL
 $sort_by = isset($_GET['sort_by']) ? escapeString($_GET['sort_by']) : 'watched_date';
 $sort_order = isset($_GET['sort_order']) ? escapeString($_GET['sort_order']) : 'DESC';
 $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
 $per_page = 24;
 $offset = ($page - 1) * $per_page;
 
-// Build ORDER BY clause
+// Build ORDER BY clause based on sort parameter
+// Maps sort options to appropriate database columns
 $order_by = "uwm.watched_date";
 if ($sort_by == 'title') {
     $order_by = "m.title";
@@ -29,7 +37,9 @@ if ($sort_by == 'title') {
     $order_by = "uwm.watched_date";
 }
 
-// Get watched movies
+// Retrieve watched movies with full movie details
+// JOINs with movies table to get complete movie information
+// Includes watched_date to show when user marked movie as watched
 $sql = "SELECT m.*, uwm.watched_date 
         FROM user_watched_movies uwm 
         JOIN movies m ON uwm.movie_id = m.movie_id 
@@ -38,7 +48,7 @@ $sql = "SELECT m.*, uwm.watched_date
         LIMIT $per_page OFFSET $offset";
 $result = myQuery($sql);
 
-// Get total count for pagination
+// Calculate total watched movies count for pagination
 $count_sql = "SELECT COUNT(*) as total FROM user_watched_movies WHERE user_id = $user_id";
 $count_result = myQuery($count_sql);
 $total_movies = mysqli_fetch_assoc($count_result)['total'];

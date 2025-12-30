@@ -1,20 +1,32 @@
 <?php
+/**
+ * Alternative Home Page (src/App directory)
+ * Displays new releases and top-rated movies in a simpler layout.
+ * This is an alternative implementation to the root index.php.
+ */
+
 require_once '../Core/connect.php';
 
-// 1. GET NEW RELEASES (Top 4 by Release Year)
+// Retrieve newest movies by release year
+// Orders by release year (newest first), then by creation date as tiebreaker
+// Limits to 4 movies for compact display
 $sql_new = "SELECT movie_id, title, poster_image, release_year, average_rating 
             FROM movies 
             ORDER BY release_year DESC, created_at DESC LIMIT 4";
 $result_new = myQuery($sql_new);
 
-// 2. GET FAN FAVORITES (Top 4 by Rating)
+// Retrieve top-rated movies (fan favorites)
+// Filters for movies that have at least one rating (total_ratings > 0)
+// Orders by average rating (highest first) to show best-rated movies
+// Limits to 4 movies for compact display
 $sql_top = "SELECT movie_id, title, poster_image, release_year, average_rating 
             FROM movies 
             WHERE total_ratings > 0
             ORDER BY average_rating DESC LIMIT 4";
 $result_top = myQuery($sql_top);
 
-// 3. GET GENRES LIST (For Sidebar)
+// Retrieve all genres for sidebar navigation
+// Orders alphabetically by genre name for easy browsing
 $sql_genres = "SELECT genre_id, genre_name FROM genres ORDER BY genre_name ASC";
 $result_genres = myQuery($sql_genres);
 ?>

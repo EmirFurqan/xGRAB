@@ -1,7 +1,15 @@
 <?php
+/**
+ * Profile Edit Page
+ * Allows users to update their profile information including username and avatar.
+ * Also handles password changes with validation.
+ */
+
 session_start();
 require("../connect.php");
+require("../image_handler.php");
 
+// Require user to be logged in to edit profile
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
@@ -13,37 +21,49 @@ $success = "";
 $password_error = "";
 $password_success = "";
 
-// Get current user info
+// Retrieve current user information from database
+// This data is used to pre-populate the edit form
 $sql = "SELECT * FROM users WHERE user_id = $user_id";
 $result = myQuery($sql);
 $user = mysqli_fetch_assoc($result);
 
-// Handle password change
+// Handle password change form submission
 if (isset($_POST['change_password'])) {
+    // Hash current password with MD5 to compare with stored hash
     $current_password = md5($_POST['current_password']);
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
 
-    // Verify current password
+    // Verify that the entered current password matches the stored password
     $check_sql = "SELECT * FROM users WHERE user_id = $user_id AND password_hash = '$current_password'";
     $check_result = myQuery($check_sql);
 
     if (mysqli_num_rows($check_result) == 0) {
         $password_error = "Current password is incorrect";
     }
-    // Validate new password
+    // Validate new password meets security requirements
+    // Minimum length check
     elseif (strlen($new_password) < 8) {
         $password_error = "Password must be at least 8 characters long";
-    } elseif (!preg_match('/[A-Z]/', $new_password)) {
+    }
+    // Require at least one uppercase letter for password strength
+    elseif (!preg_match('/[A-Z]/', $new_password)) {
         $password_error = "Password must contain at least one uppercase letter";
-    } elseif (!preg_match('/[0-9]/', $new_password)) {
+    }
+    // Require at least one number
+    elseif (!preg_match('/[0-9]/', $new_password)) {
         $password_error = "Password must contain at least one number";
-    } elseif (!preg_match('/[^A-Za-z0-9]/', $new_password)) {
+    }
+    // Require at least one special character (non-alphanumeric)
+    elseif (!preg_match('/[^A-Za-z0-9]/', $new_password)) {
         $password_error = "Password must contain at least one special character";
-    } elseif ($new_password !== $confirm_password) {
+    }
+    // Verify password confirmation matches
+    elseif ($new_password !== $confirm_password) {
         $password_error = "New passwords do not match";
     } else {
-        // Update password
+        // Hash new password with MD5 and update database
+        // Note: MD5 is cryptographically weak; consider upgrading to bcrypt
         $new_password_hash = md5($new_password);
         $update_sql = "UPDATE users SET password_hash = '$new_password_hash' WHERE user_id = $user_id";
         if (myQuery($update_sql)) {
@@ -54,44 +74,62 @@ if (isset($_POST['change_password'])) {
     }
 }
 
+// Handle profile update form submission
 if (isset($_POST['submit'])) {
+    // Sanitize username input to prevent SQL injection
     $username = escapeString($_POST['username']);
 
-    // Check if username is already taken (by another user)
+    // Check if the new username is already taken by another user
+    // Exclude current user from the check (user_id != $user_id)
     $check_sql = "SELECT * FROM users WHERE username = '$username' AND user_id != $user_id";
     $check_result = myQuery($check_sql);
 
     if (mysqli_num_rows($check_result) > 0) {
         $error = "Username already taken";
     } else {
-        // Handle avatar upload
+        // Handle avatar image upload
+        // Default to existing avatar filename if no new file is uploaded
         $avatar_filename = $user['profile_avatar'];
+        
+        // Check if a new avatar file was uploaded successfully
         if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] == 0) {
+            // Define upload directory for avatars
             $upload_dir = "../uploads/avatars/";
+            
+            // Create upload directory if it doesn't exist
             if (!file_exists($upload_dir)) {
                 mkdir($upload_dir, 0777, true);
             }
+            
+            // Extract file extension from uploaded file
             $file_extension = pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION);
+            
+            // Generate unique filename using user ID and timestamp
+            // Format: avatar_{user_id}_{timestamp}.{extension}
             $avatar_filename = "avatar_" . $user_id . "_" . time() . "." . $file_extension;
             $upload_path = $upload_dir . $avatar_filename;
 
+            // Move uploaded file from temporary location to permanent storage
             if (move_uploaded_file($_FILES['avatar']['tmp_name'], $upload_path)) {
-                // Delete old avatar if exists
+                // Delete old avatar file if it exists to save disk space
                 if ($user['profile_avatar'] && file_exists($upload_dir . $user['profile_avatar'])) {
                     unlink($upload_dir . $user['profile_avatar']);
                 }
             } else {
+                // If upload fails, keep existing avatar filename
                 $error = "Failed to upload avatar";
                 $avatar_filename = $user['profile_avatar'];
             }
         }
 
-        // Update user
+        // Update user record with new username and avatar filename
         $update_sql = "UPDATE users SET username = '$username', profile_avatar = '$avatar_filename' WHERE user_id = $user_id";
         if (myQuery($update_sql)) {
+            // Update session username to reflect the change immediately
             $_SESSION['username'] = $username;
             $success = "Profile updated successfully";
-            // Reload user data
+            
+            // Reload user data from database to reflect changes
             $result = myQuery($sql);
             $user = mysqli_fetch_assoc($result);
         } else {
@@ -179,7 +217,7 @@ if (isset($_POST['submit'])) {
                     <?php if ($user['profile_avatar']): ?>
                         <div class="mb-3">
                             <p class="text-sm text-gray-400 mb-2">Current Avatar:</p>
-                            <img src="../uploads/avatars/<?php echo htmlspecialchars($user['profile_avatar']); ?>"
+                            <img src="<?php echo htmlspecialchars(getImagePath($user['profile_avatar'], 'avatar')); ?>"
                                 alt="Current Avatar" class="w-24 h-24 rounded-full object-cover border-2 border-gray-600">
                         </div>
                     <?php endif; ?>

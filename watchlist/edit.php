@@ -1,12 +1,20 @@
 <?php
+/**
+ * Edit Watchlist Page
+ * Allows users to rename their watchlists.
+ * Verifies watchlist ownership before allowing edits.
+ */
+
 session_start();
 require("../connect.php");
 
+// Require user to be logged in to edit watchlists
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
 }
 
+// Validate watchlist ID parameter
 if (!isset($_GET['id'])) {
     header("Location: index.php");
     exit();
@@ -17,27 +25,35 @@ $user_id = $_SESSION['user_id'];
 $error = "";
 $success = "";
 
-// Get watchlist info
+// Retrieve watchlist information and verify ownership
 $watchlist_sql = "SELECT * FROM watchlists WHERE watchlist_id = $watchlist_id AND user_id = $user_id";
 $watchlist_result = myQuery($watchlist_sql);
 
+// Redirect if watchlist doesn't exist or user doesn't own it
 if (mysqli_num_rows($watchlist_result) == 0) {
     header("Location: index.php");
     exit();
 }
 $watchlist = mysqli_fetch_assoc($watchlist_result);
 
+// Process watchlist rename form submission
 if (isset($_POST['submit'])) {
+    // Sanitize watchlist name input
     $watchlist_name = escapeString($_POST['watchlist_name']);
 
+    // Validate watchlist name is not empty
     if (empty($watchlist_name)) {
         $error = "Watchlist name is required";
-    } elseif (strlen($watchlist_name) > 50) {
+    }
+    // Validate watchlist name doesn't exceed database column limit (50 characters)
+    elseif (strlen($watchlist_name) > 50) {
         $error = "Watchlist name must be 50 characters or less";
     } else {
+        // Update watchlist name in database
         $update_sql = "UPDATE watchlists SET watchlist_name = '$watchlist_name' WHERE watchlist_id = $watchlist_id";
         if (myQuery($update_sql)) {
             $success = "Watchlist renamed successfully!";
+            // Redirect to watchlist index with success message
             header("Location: index.php?success=" . urlencode($success));
             exit();
         } else {

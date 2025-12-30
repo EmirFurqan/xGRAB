@@ -1,8 +1,15 @@
 <?php
+/**
+ * Add Crew Member Page (Admin)
+ * Allows administrators to add new crew members to the database.
+ * Handles crew member data entry and photo upload.
+ */
+
 session_start();
 require("../../connect.php");
 require("../../image_handler.php");
 
+// Verify user has admin privileges
 if (!isset($_SESSION['user_id']) || !$_SESSION['is_admin']) {
     die("Access Denied");
 }
@@ -10,13 +17,18 @@ if (!isset($_SESSION['user_id']) || !$_SESSION['is_admin']) {
 $error = "";
 $success = "";
 
+// Process crew member creation form submission
 if (isset($_POST['submit'])) {
+    // Extract and sanitize form data
     $name = escapeString($_POST['name']);
     $biography = escapeString($_POST['biography']);
 
-    // Handle photo upload
+    // Handle crew member photo upload
     $photo_url = '';
     if (isset($_FILES['photo']) && $_FILES['photo']['error'] == UPLOAD_ERR_OK) {
+        // Use image_handler function to upload with validation
+        // Note: Uses 'cast' type directory but 'crew_' prefix for filename
+        // Max size: 5MB (5242880 bytes)
         $upload_result = uploadImage($_FILES['photo'], 'cast', 'crew_', 5242880);
         if ($upload_result['success']) {
             $photo_url = $upload_result['filename'];
@@ -25,20 +37,24 @@ if (isset($_POST['submit'])) {
         }
     }
 
+    // Validate required fields
     if (empty($name)) {
         $error = "Name is required";
     } elseif (empty($error)) {
-        // Insert crew member
+        // Insert crew member record into database
+        // Handle NULL photo_url and biography if not provided
         $photo_value = $photo_url ? "'$photo_url'" : 'NULL';
         $insert_sql = "INSERT INTO crew_members (name, photo_url, biography) 
                        VALUES ('$name', $photo_value, " . ($biography ? "'$biography'" : 'NULL') . ")";
 
+        // Use getConnection() for access to mysqli_insert_id()
         $conn = getConnection();
         if (mysqli_query($conn, $insert_sql)) {
+            // Get the ID of the newly inserted crew member
             $crew_id = mysqli_insert_id($conn);
             mysqli_close($conn);
 
-            // Log admin action
+            // Log admin action for audit trail
             $admin_id = $_SESSION['user_id'];
             $log_sql = "INSERT INTO admin_logs (admin_id, action_type, target_type, target_id, description) 
                         VALUES ($admin_id, 'crew_add', 'crew', $crew_id, 'Added new crew member: $name')";

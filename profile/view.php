@@ -1,53 +1,75 @@
 <?php
+/**
+ * User Profile View Page
+ * Displays user profile information, statistics, and activity history.
+ * Supports viewing both own profile and other users' profiles.
+ */
+
 session_start();
 require("../connect.php");
 require("../image_handler.php");
 
-// Get user_id from query or session
+// Determine which user's profile to display
+// Priority: URL parameter > logged-in user > redirect to login
+// Cast to integer to prevent SQL injection via type conversion
 $view_user_id = isset($_GET['user_id']) ? (int) $_GET['user_id'] : (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0);
 
+// Redirect to login if no valid user ID is available
 if ($view_user_id == 0) {
     header("Location: ../login.php");
     exit();
 }
 
-// Get user info
+// Retrieve user information from database
+// Fetches all user data including username, email, join date, and admin status
 $sql = "SELECT * FROM users WHERE user_id = $view_user_id";
 $result = myQuery($sql);
+
+// Redirect if user doesn't exist in database
 if (mysqli_num_rows($result) == 0) {
     header("Location: ../movies/browse.php");
     exit();
 }
 $user = mysqli_fetch_assoc($result);
 
-// Get user statistics
+// Calculate user statistics for profile display
+// These queries count various activities to show user engagement
+
+// Count total reviews written by this user
 $review_count_sql = "SELECT COUNT(*) as total FROM reviews WHERE user_id = $view_user_id";
 $review_count_result = myQuery($review_count_sql);
 $review_count = mysqli_fetch_assoc($review_count_result)['total'];
 
+// Count total watchlists created by this user
 $watchlist_count_sql = "SELECT COUNT(*) as total FROM watchlists WHERE user_id = $view_user_id";
 $watchlist_count_result = myQuery($watchlist_count_sql);
 $watchlist_count = mysqli_fetch_assoc($watchlist_count_result)['total'];
 
-// Get favorite counts
+// Count favorite movies (entity_type = 'movie' filters to only movie favorites)
 $favorite_movies_count_sql = "SELECT COUNT(*) as total FROM favorites WHERE user_id = $view_user_id AND entity_type = 'movie'";
 $favorite_movies_count_result = myQuery($favorite_movies_count_sql);
 $favorite_movies_count = mysqli_fetch_assoc($favorite_movies_count_result)['total'];
 
+// Count favorite cast members
 $favorite_cast_count_sql = "SELECT COUNT(*) as total FROM favorites WHERE user_id = $view_user_id AND entity_type = 'cast'";
 $favorite_cast_count_result = myQuery($favorite_cast_count_sql);
 $favorite_cast_count = mysqli_fetch_assoc($favorite_cast_count_result)['total'];
 
+// Count favorite users (users following other users)
 $favorite_users_count_sql = "SELECT COUNT(*) as total FROM favorites WHERE user_id = $view_user_id AND entity_type = 'user'";
 $favorite_users_count_result = myQuery($favorite_users_count_sql);
 $favorite_users_count = mysqli_fetch_assoc($favorite_users_count_result)['total'];
 
-// Get watched count
+// Count total movies watched by this user
 $watched_count_sql = "SELECT COUNT(*) as total FROM user_watched_movies WHERE user_id = $view_user_id";
 $watched_count_result = myQuery($watched_count_sql);
 $watched_count = mysqli_fetch_assoc($watched_count_result)['total'];
 
-// Get last favorite movies (no limit - show as many as fit)
+// Retrieve recent favorite items for display
+// These queries join favorites with their respective entity tables to get display information
+
+// Get recently favorited movies with movie details
+// JOIN with movies table to get title, poster, and rating information
 $last_fav_movies_sql = "SELECT f.*, m.title, m.poster_image, m.release_year, m.average_rating 
                        FROM favorites f 
                        JOIN movies m ON f.entity_id = m.movie_id 
@@ -55,7 +77,8 @@ $last_fav_movies_sql = "SELECT f.*, m.title, m.poster_image, m.release_year, m.a
                        ORDER BY f.date_added DESC";
 $last_fav_movies_result = myQuery($last_fav_movies_sql);
 
-// Get last favorite cast (no limit - show as many as fit)
+// Get recently favorited cast members with cast details
+// JOIN with cast_members table to get name and photo
 $last_fav_cast_sql = "SELECT f.*, cm.name, cm.photo_url 
                      FROM favorites f 
                      JOIN cast_members cm ON f.entity_id = cm.cast_id 
@@ -63,7 +86,8 @@ $last_fav_cast_sql = "SELECT f.*, cm.name, cm.photo_url
                      ORDER BY f.date_added DESC";
 $last_fav_cast_result = myQuery($last_fav_cast_sql);
 
-// Get last favorite users (no limit - show as many as fit)
+// Get recently favorited users (users following other users)
+// JOIN with users table to get username and avatar
 $last_fav_users_sql = "SELECT f.*, u.username, u.profile_avatar 
                       FROM favorites f 
                       JOIN users u ON f.entity_id = u.user_id 
@@ -71,7 +95,8 @@ $last_fav_users_sql = "SELECT f.*, u.username, u.profile_avatar
                       ORDER BY f.date_added DESC";
 $last_fav_users_result = myQuery($last_fav_users_sql);
 
-// Get last watched movies (no limit - show as many as fit)
+// Get recently watched movies with movie details
+// JOIN with movies table to get full movie information
 $last_watched_sql = "SELECT uwm.*, m.title, m.poster_image, m.release_year, m.average_rating 
                     FROM user_watched_movies uwm 
                     JOIN movies m ON uwm.movie_id = m.movie_id 
@@ -79,11 +104,15 @@ $last_watched_sql = "SELECT uwm.*, m.title, m.poster_image, m.release_year, m.av
                     ORDER BY uwm.watched_date DESC";
 $last_watched_result = myQuery($last_watched_sql);
 
+// Determine if the current logged-in user is viewing their own profile
+// This affects which UI elements are shown (edit buttons, etc.)
 $is_own_profile = isset($_SESSION['user_id']) && $_SESSION['user_id'] == $view_user_id;
 
-// Check if this user is favorited by current user (if logged in and not own profile)
+// Check if the profile being viewed is favorited by the current logged-in user
+// Only check if user is logged in and viewing someone else's profile
 $is_user_favorited = false;
 if (isset($_SESSION['user_id']) && !$is_own_profile) {
+    // Query to check if current user has favorited the profile being viewed
     $favorite_user_sql = "SELECT favorite_id FROM favorites 
                          WHERE user_id = " . $_SESSION['user_id'] . " 
                          AND entity_type = 'user' 
@@ -92,7 +121,9 @@ if (isset($_SESSION['user_id']) && !$is_own_profile) {
     $is_user_favorited = mysqli_num_rows($favorite_user_result) > 0;
 }
 
-// Generate color for avatar based on username (more varied colors)
+// Generate consistent avatar color based on username
+// Uses CRC32 hash to convert username to a number, then modulo to select from color array
+// This ensures the same username always gets the same color
 $avatar_colors = [
     'bg-red-500',
     'bg-red-600',
@@ -111,6 +142,8 @@ $avatar_colors = [
     'bg-rose-500',
     'bg-violet-500'
 ];
+// Calculate color index using CRC32 hash of username
+// Modulo ensures index stays within array bounds
 $color_index = crc32($user['username']) % count($avatar_colors);
 $avatar_color = $avatar_colors[$color_index];
 ?>
@@ -151,7 +184,7 @@ $avatar_color = $avatar_colors[$color_index];
                     <div class="w-32 h-32 <?php echo $user['profile_avatar'] ? '' : $avatar_color; ?> rounded-full flex items-center justify-center overflow-hidden shadow-lg border-2 <?php echo $user['profile_avatar'] ? 'border-gray-600' : 'border-transparent'; ?>"
                         style="text-align: center; line-height: 1;">
                         <?php if ($user['profile_avatar']): ?>
-                            <img src="<?php echo htmlspecialchars($user['profile_avatar']); ?>"
+                            <img src="<?php echo htmlspecialchars(getImagePath($user['profile_avatar'], 'avatar')); ?>"
                                 alt="<?php echo htmlspecialchars($user['username']); ?>" class="w-full h-full object-cover">
                         <?php else: ?>
                             <?php
@@ -444,7 +477,7 @@ $avatar_color = $avatar_colors[$color_index];
                         <a href="view.php?user_id=<?php echo $fav['entity_id']; ?>" class="inline-block">
                             <div class="aspect-[2/3] bg-gray-200 rounded overflow-hidden relative w-[120px]">
                                 <?php if ($fav['profile_avatar']): ?>
-                                    <img src="<?php echo htmlspecialchars($fav['profile_avatar']); ?>"
+                                    <img src="<?php echo htmlspecialchars(getImagePath($fav['profile_avatar'], 'avatar')); ?>"
                                         alt="<?php echo htmlspecialchars($fav['username']); ?>"
                                         class="w-full h-full object-cover hover:scale-110 transition-transform duration-200 ease-out">
                                 <?php else: ?>

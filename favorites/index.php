@@ -1,8 +1,15 @@
 <?php
+/**
+ * Favorites Index Page
+ * Displays all user favorites organized by type (movies, cast, users).
+ * Shows favorite movies, cast members, and followed users in separate sections.
+ */
+
 session_start();
 require("../connect.php");
 require("../image_handler.php");
 
+// Require user to be logged in to view favorites
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
@@ -10,7 +17,11 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Get all favorites grouped by type
+// Retrieve all favorites grouped by entity type
+// Each query JOINs with the appropriate table to get display information
+
+// Get favorite movies with movie details
+// JOINs with movies table to get title, poster, release year, and rating
 $favorites_movies_sql = "SELECT f.*, m.title, m.poster_image, m.release_year, m.average_rating 
                         FROM favorites f 
                         JOIN movies m ON f.entity_id = m.movie_id 
@@ -18,6 +29,8 @@ $favorites_movies_sql = "SELECT f.*, m.title, m.poster_image, m.release_year, m.
                         ORDER BY f.date_added DESC";
 $favorites_movies_result = myQuery($favorites_movies_sql);
 
+// Get favorite cast members with cast details
+// JOINs with cast_members table to get name and photo
 $favorites_cast_sql = "SELECT f.*, cm.name, cm.photo_url 
                       FROM favorites f 
                       JOIN cast_members cm ON f.entity_id = cm.cast_id 
@@ -25,6 +38,8 @@ $favorites_cast_sql = "SELECT f.*, cm.name, cm.photo_url
                       ORDER BY f.date_added DESC";
 $favorites_cast_result = myQuery($favorites_cast_sql);
 
+// Get favorite users (users following other users) with user details
+// JOINs with users table to get username and avatar
 $favorites_users_sql = "SELECT f.*, u.username, u.profile_avatar 
                        FROM favorites f 
                        JOIN users u ON f.entity_id = u.user_id 
@@ -32,12 +47,13 @@ $favorites_users_sql = "SELECT f.*, u.username, u.profile_avatar
                        ORDER BY f.date_added DESC";
 $favorites_users_result = myQuery($favorites_users_sql);
 
-// Counts
+// Calculate counts for each favorite type for display
 $movies_count = mysqli_num_rows($favorites_movies_result);
 $cast_count = mysqli_num_rows($favorites_cast_result);
 $users_count = mysqli_num_rows($favorites_users_result);
 
-// Avatar colors
+// Define avatar color palette for users/cast without photos
+// Colors are selected based on username/name hash for consistency
 $avatar_colors = [
     'bg-red-500',
     'bg-red-600',
@@ -288,7 +304,7 @@ $avatar_colors = [
                                     <div
                                         class="aspect-[2/3] bg-gray-200 flex items-center justify-center relative overflow-hidden">
                                         <?php if ($fav['profile_avatar']): ?>
-                                            <img src="<?php echo htmlspecialchars($fav['profile_avatar']); ?>"
+                                            <img src="<?php echo htmlspecialchars(getImagePath($fav['profile_avatar'], 'avatar')); ?>"
                                                 alt="<?php echo htmlspecialchars($fav['username']); ?>"
                                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                                         <?php else: ?>

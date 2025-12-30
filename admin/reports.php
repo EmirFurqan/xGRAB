@@ -1,12 +1,22 @@
 <?php
+/**
+ * Review Reports Page (Admin)
+ * Displays all reviews that have been reported by users.
+ * Shows review details, reporter information, and report counts for moderation.
+ */
+
 session_start();
 require("../connect.php");
 
+// Verify user has admin privileges
 if (!isset($_SESSION['user_id']) || !$_SESSION['is_admin']) {
     die("Access Denied");
 }
 
-// Get all reported reviews with details - group by review_id
+// Retrieve all reported reviews with full context
+// JOINs with users and movies tables to get reviewer and movie information
+// Filters for reviews with report_count > 0 (at least one report)
+// Orders by report count (most reported first), then by creation date
 $reports_sql = "SELECT r.review_id, r.review_text, r.rating_value, r.is_spoiler, r.report_count,
                 r.user_id as reviewer_id,
                 u1.username as reviewer_username,

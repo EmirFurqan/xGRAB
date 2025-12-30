@@ -1,7 +1,14 @@
 <?php
+/**
+ * Account Deletion Page
+ * Handles permanent account deletion with confirmation requirement.
+ * Deletes user record and all related data via database CASCADE constraints.
+ */
+
 session_start();
 require("../connect.php");
 
+// Require user to be logged in to delete account
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
@@ -10,16 +17,30 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $error = "";
 
+// Process account deletion confirmation
 if (isset($_POST['confirm_delete'])) {
+    // Sanitize confirmation text input
     $confirm_text = escapeString($_POST['confirm_text']);
 
+    // Require exact match of 'DELETE' to prevent accidental deletions
+    // This adds an extra layer of confirmation beyond just clicking a button
     if ($confirm_text !== 'DELETE') {
         $error = "Confirmation text must be exactly 'DELETE'";
     } else {
-        // Delete user (CASCADE will handle related records)
+        // Delete user record from database
+        // Database foreign key constraints with CASCADE will automatically delete:
+        // - Reviews (reviews.user_id)
+        // - Watchlists (watchlists.user_id)
+        // - Favorites (favorites.user_id)
+        // - Watched movies (user_watched_movies.user_id)
+        // - Password reset tokens (password_reset_tokens.user_id)
+        // - Admin logs (admin_logs.admin_id)
         $delete_sql = "DELETE FROM users WHERE user_id = $user_id";
         if (myQuery($delete_sql)) {
+            // Destroy session to log out the user
             session_destroy();
+            
+            // Redirect to registration page with success message
             header("Location: ../register.php?message=Account deleted successfully");
             exit();
         } else {

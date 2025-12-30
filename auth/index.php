@@ -1,31 +1,46 @@
 <?php
+/**
+ * Unified Authentication Page
+ * Handles both user login and registration in a single page with mode switching.
+ * Uses password_hash() for secure password storage (different from root login.php which uses MD5).
+ */
+
 session_start();
-// Adjust this path if your folder structure is different
+// Include database connection from src/Core directory
+// This uses a different database connection than the root connect.php
 require_once '../src/Core/connect.php';
 
 $error = "";
 $success = "";
+// Determine which mode to display: 'login' or 'register'
+// Defaults to 'login' if no mode parameter is provided
 $mode = isset($_GET['mode']) ? $_GET['mode'] : 'login';
 
-// HANDLE FORM SUBMISSIONS
+// Process form submissions (both login and registration)
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    // --- 1. HANDLE REGISTRATION ---
+    // --- REGISTRATION HANDLING ---
     if (isset($_POST['action']) && $_POST['action'] == 'register') {
 
+        // Sanitize user inputs using addslashes (basic SQL injection prevention)
+        // Note: addslashes is less secure than prepared statements
         $username = addslashes($_POST['username']);
         $email = addslashes($_POST['email']);
         $password = $_POST['password'];
         $confirm = $_POST['confirm_password'];
 
+        // Validate that password and confirmation match
         if ($password !== $confirm) {
             $error = "Passwords do not match.";
             $mode = 'register';
-        } elseif (strlen($password) < 6) {
+        }
+        // Check minimum password length requirement (6 characters)
+        elseif (strlen($password) < 6) {
             $error = "Password must be at least 6 characters.";
             $mode = 'register';
         } else {
-            // Check existence
+            // Check if username or email already exists in database
+            // This prevents duplicate accounts
             $check_sql = "SELECT user_id FROM users WHERE email = '$email' OR username = '$username'";
             $check_result = myQuery($check_sql);
 
@@ -33,42 +48,57 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $error = "Username or Email already exists.";
                 $mode = 'register';
             } else {
-                // Create User
+                // Hash password using PHP's password_hash with default algorithm (bcrypt)
+                // This is more secure than MD5 used in root register.php
                 $pass_hash = password_hash($password, PASSWORD_DEFAULT);
+                
+                // Generate default avatar URL using placeholder service
+                // Creates avatar with first letter of username as text
                 $avatar = "https://placehold.co/100x100?text=" . strtoupper(substr($username, 0, 1));
 
+                // Insert new user into database with hashed password and default avatar
+                // NOW() function sets join_date to current timestamp
                 $sql_insert = "INSERT INTO users (username, email, password_hash, join_date, profile_avatar) 
                                VALUES ('$username', '$email', '$pass_hash', NOW(), '$avatar')";
 
                 myQuery($sql_insert);
 
                 $success = "Account created! Please log in.";
+                // Switch to login mode after successful registration
                 $mode = 'login';
             }
         }
     }
 
-    // --- 2. HANDLE LOGIN ---
+    // --- LOGIN HANDLING ---
     elseif (isset($_POST['action']) && $_POST['action'] == 'login') {
 
+        // Sanitize email/username input
         $email = addslashes($_POST['email']);
         $password = $_POST['password'];
 
+        // Query database to find user by email OR username
+        // This allows users to login with either their email or username
         $sql = "SELECT user_id, username, password_hash, is_admin, profile_avatar 
                 FROM users 
                 WHERE email = '$email' OR username = '$email'";
 
         $result = myQuery($sql);
 
+        // Check if user was found in database
         if ($result && $result->num_rows > 0) {
             $user = $result->fetch_assoc();
 
+            // Verify password against stored hash using password_verify
+            // This works with password_hash() and handles bcrypt verification
             if (password_verify($password, $user['password_hash'])) {
+                // Store user information in session for authentication
                 $_SESSION['user_id'] = $user['user_id'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['is_admin'] = $user['is_admin'];
 
-                // --- UPDATED REDIRECT HERE ---
+                // Redirect to external application URL after successful login
+                // This appears to be a custom redirect for a specific deployment
                 header("Location: http://10.1.7.100:7777/gr2025-022.com");
                 exit;
             } else {

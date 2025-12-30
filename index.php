@@ -1,9 +1,17 @@
 <?php
+/**
+ * Home Page
+ * Displays featured movies in a hero carousel and grid layout.
+ * Shows top-rated movies with poster images and genre information.
+ */
+
 session_start();
 require("connect.php");
 require("image_handler.php");
 
-// Get featured movies for hero carousel (top 5 with genres)
+// Retrieve top-rated movies for hero carousel display
+// Uses GROUP_CONCAT to combine multiple genres into comma-separated strings
+// Filters for movies with ratings and poster images to ensure quality display
 $hero_sql = "SELECT m.*, 
              GROUP_CONCAT(g.genre_name SEPARATOR ', ') as genres,
              GROUP_CONCAT(g.genre_id SEPARATOR ',') as genre_ids
@@ -15,37 +23,54 @@ $hero_sql = "SELECT m.*,
              ORDER BY m.average_rating DESC, m.total_ratings DESC
              LIMIT 5";
 $hero_result = myQuery($hero_sql);
+
+// Store hero movies in array for use in carousel
 $hero_movies = [];
 while ($movie = mysqli_fetch_assoc($hero_result)) {
     $hero_movies[] = $movie;
 }
 
-// Get featured movies for grid (top rated)
+// Retrieve top-rated movies for featured grid display
+// Orders by average rating first, then by number of ratings (popularity)
+// Limits to 12 movies for grid layout
 $sql = "SELECT * FROM movies ORDER BY average_rating DESC, total_ratings DESC LIMIT 12";
 $result = myQuery($sql);
 
-// Get favorite status for all movies (if user is logged in)
+// Check favorite status for displayed movies if user is logged in
+// This allows the UI to show which movies the user has already favorited
 $favorite_movies = [];
 if (isset($_SESSION['user_id'])) {
     $user_id = $_SESSION['user_id'];
-    // Get all movie IDs from hero and featured
+    
+    // Collect all movie IDs from both hero carousel and featured grid
     $all_movie_ids = [];
     foreach ($hero_movies as $movie) {
         $all_movie_ids[] = $movie['movie_id'];
     }
+    
+    // Reset result pointer and collect IDs from featured movies
     mysqli_data_seek($result, 0);
     while ($row = mysqli_fetch_assoc($result)) {
         $all_movie_ids[] = $row['movie_id'];
     }
+    
+    // Reset result pointer again for later display
     mysqli_data_seek($result, 0);
 
+    // Query favorites in a single query for efficiency
+    // Only query if there are movies to check
     if (!empty($all_movie_ids)) {
+        // Convert to integers and remove duplicates for safety
         $movie_ids_str = implode(',', array_map('intval', array_unique($all_movie_ids)));
+        
+        // Get all favorite movie IDs for this user from the displayed movies
         $favorites_sql = "SELECT entity_id FROM favorites 
                          WHERE user_id = $user_id 
                          AND entity_type = 'movie' 
                          AND entity_id IN ($movie_ids_str)";
         $favorites_result = myQuery($favorites_sql);
+        
+        // Store favorite movie IDs in array for quick lookup
         while ($fav = mysqli_fetch_assoc($favorites_result)) {
             $favorite_movies[] = $fav['entity_id'];
         }

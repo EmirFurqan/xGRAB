@@ -1,12 +1,21 @@
 <?php
+/**
+ * User Management Page (Admin)
+ * Displays all registered users with their activity statistics.
+ * Allows administrators to view user information and activity counts.
+ */
+
 session_start();
 require("../../connect.php");
 
+// Verify user has admin privileges
 if (!isset($_SESSION['user_id']) || !$_SESSION['is_admin']) {
     die("Access Denied");
 }
 
-// Get all users
+// Retrieve all users with activity statistics
+// Uses subqueries to count reviews and watchlists for each user
+// Ordered by creation date (newest users first)
 $users_sql = "SELECT u.*, 
               (SELECT COUNT(*) FROM reviews WHERE user_id = u.user_id) as review_count,
               (SELECT COUNT(*) FROM watchlists WHERE user_id = u.user_id) as watchlist_count

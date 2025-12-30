@@ -1,57 +1,91 @@
 <?php
+/**
+ * User Registration Page
+ * Handles new user account creation with validation and duplicate checking.
+ * Implements password strength requirements and ensures unique usernames and emails.
+ */
+
 session_start();
 require("connect.php");
 $error = "";
 $success = "";
 
-// Check if already logged in
+// Redirect users who are already logged in
+// Prevents logged-in users from creating duplicate accounts
 if (isset($_SESSION['user_id'])) {
     header("Location: menu.php");
     exit();
 }
 
+// Process registration form submission
 if (isset($_POST['submit'])) {
+    // Sanitize user inputs to prevent SQL injection
     $username = escapeString($_POST['username']);
     $email = escapeString($_POST['email']);
+    
+    // Store passwords without escaping (hashing will be applied)
+    // Passwords should not be escaped as they will be hashed before database storage
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
 
-    // Validate email format
+    // Validate email format using PHP's built-in filter
+    // This ensures the email follows proper email address syntax
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Invalid email format";
     }
-    // Check password requirements
+    // Validate password meets minimum length requirement
+    // Minimum 8 characters is a common security standard
     elseif (strlen($password) < 8) {
         $error = "Password must be at least 8 characters long";
-    } elseif (!preg_match('/[A-Z]/', $password)) {
+    }
+    // Check for at least one uppercase letter
+    // This increases password complexity and security
+    elseif (!preg_match('/[A-Z]/', $password)) {
         $error = "Password must contain at least one uppercase letter";
-    } elseif (!preg_match('/[0-9]/', $password)) {
+    }
+    // Check for at least one numeric digit
+    // Mixing letters and numbers improves password strength
+    elseif (!preg_match('/[0-9]/', $password)) {
         $error = "Password must contain at least one number";
-    } elseif (!preg_match('/[^A-Za-z0-9]/', $password)) {
+    }
+    // Check for at least one special character (non-alphanumeric)
+    // Special characters further enhance password security
+    elseif (!preg_match('/[^A-Za-z0-9]/', $password)) {
         $error = "Password must contain at least one special character";
-    } elseif ($password !== $confirm_password) {
+    }
+    // Verify password confirmation matches original password
+    // This prevents typos that would lock users out of their accounts
+    elseif ($password !== $confirm_password) {
         $error = "Passwords do not match";
     } else {
-        // Check if email already exists
+        // Check if email address is already registered in the database
+        // Prevents duplicate accounts with the same email
         $check_email = "SELECT * FROM users WHERE email = '$email'";
         $res_email = myQuery($check_email);
         if (mysqli_num_rows($res_email) > 0) {
             $error = "Email already registered";
         }
-        // Check if username already exists
+        // Check if username is already taken
+        // Ensures each user has a unique username for identification
         else {
             $check_username = "SELECT * FROM users WHERE username = '$username'";
             $res_username = myQuery($check_username);
             if (mysqli_num_rows($res_username) > 0) {
                 $error = "Username already taken";
             } else {
-                // Hash password with MD5
+                // Hash password using MD5 algorithm
+                // Note: MD5 is cryptographically weak; consider upgrading to bcrypt or Argon2
                 $password_hash = md5($password);
+                
+                // Set join date to current date for tracking when user registered
                 $join_date = date('Y-m-d');
 
+                // Insert new user record into database
+                // Stores username, email, hashed password, and join date
                 $sql = "INSERT INTO users (username, email, password_hash, join_date) 
                         VALUES ('$username', '$email', '$password_hash', '$join_date')";
 
+                // Execute insert query and check for success
                 if (myQuery($sql)) {
                     $success = "Registration successful! You can now login.";
                 } else {

@@ -1,15 +1,29 @@
 <?php
-// Reusable Navigation Component
-// Usage: require("includes/nav.php"); or require("../includes/nav.php");
+/**
+ * Reusable Navigation Component
+ * Provides consistent navigation bar across all pages.
+ * Automatically adjusts link paths based on current directory depth.
+ * Usage: require("includes/nav.php"); or require("../includes/nav.php");
+ */
 
-// Determine base path for links based on current directory
+// Include image handler for avatar path generation
+// Check if image_handler.php exists in the expected location relative to this file
+$image_handler_path = __DIR__ . '/../image_handler.php';
+if (file_exists($image_handler_path)) {
+    require_once $image_handler_path;
+}
+
+// Determine base path for navigation links based on current directory
+// This ensures links work correctly regardless of which subdirectory the page is in
 $base_path = "";
 $script_path = $_SERVER['PHP_SELF'];
 
-// Normalize path separators (handle Windows backslashes)
+// Normalize path separators to forward slashes
+// Handles Windows backslashes for cross-platform compatibility
 $script_path = str_replace('\\', '/', $script_path);
 
-// Explicitly handle known directory patterns
+// Detect directory depth and set appropriate base path
+// Two-level deep directories (e.g., admin/users/, admin/movies/) need "../../"
 if (
     strpos($script_path, '/admin/users/') !== false ||
     strpos($script_path, '/admin/movies/') !== false ||
@@ -27,19 +41,21 @@ if (
     strpos($script_path, '/favorites/') !== false ||
     strpos($script_path, '/watched/') !== false
 ) {
-    // We're in a first-level subdirectory
+    // We're in a first-level subdirectory, need one level up
     $base_path = "../";
 }
 
-// Get user info if logged in
+// Retrieve user information for navigation display
 $user_avatar = null;
 $user_initial = '';
 $username = '';
 if (isset($_SESSION['user_id'])) {
+    // Get username from session and extract first letter for avatar fallback
     $username = htmlspecialchars($_SESSION['username']);
     $user_initial = strtoupper(substr($username, 0, 1));
 
-    // Get user avatar from database (if connect.php is loaded)
+    // Retrieve user avatar from database if database connection is available
+    // Check if myQuery function exists to avoid errors if connect.php isn't loaded
     if (function_exists('myQuery') && isset($_SESSION['user_id'])) {
         $avatar_sql = "SELECT profile_avatar FROM users WHERE user_id = " . (int) $_SESSION['user_id'];
         $avatar_result = myQuery($avatar_sql);
@@ -50,7 +66,9 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 
-// Generate color for avatar based on username (more varied colors)
+// Generate consistent avatar background color based on username
+// Uses CRC32 hash to convert username to number, then modulo to select color
+// This ensures same username always gets same color
 $avatar_colors = [
     'bg-red-500',
     'bg-red-600',
@@ -221,7 +239,7 @@ $avatar_color = $avatar_colors[$color_index];
                             class="flex items-center space-x-2 p-1.5 rounded-xl hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-white/10">
                             <div class="relative">
                                 <?php if ($user_avatar): ?>
-                                    <img src="<?php echo htmlspecialchars($user_avatar); ?>" alt="<?php echo $username; ?>"
+                                    <img src="<?php echo htmlspecialchars(function_exists('getImagePath') ? getImagePath($user_avatar, 'avatar') : $user_avatar); ?>" alt="<?php echo $username; ?>"
                                         class="w-9 h-9 rounded-lg border-2 border-gray-600 object-cover">
                                 <?php else: ?>
                                     <?php

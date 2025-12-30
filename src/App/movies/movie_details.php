@@ -1,10 +1,19 @@
 <?php
+/**
+ * Movie Details Page (src/App directory)
+ * Alternative movie details page implementation.
+ * Displays movie information, cast, crew, and reviews.
+ * This is an alternative implementation to the root movies/details.php.
+ */
+
 require_once '../../Core/connect.php';
 
+// Validate movie ID parameter
 if (isset($_GET['id'])) {
     $movie_id = intval($_GET['id']);
 
-    // 1. MOVIE INFO
+    // Retrieve movie information with genre list
+    // Uses GROUP_CONCAT to combine multiple genres into comma-separated string
     $movie_sql = "SELECT m.*, GROUP_CONCAT(g.genre_name SEPARATOR ', ') as genre_list 
                   FROM movies m
                   LEFT JOIN movie_genres mg ON m.movie_id = mg.movie_id
@@ -14,9 +23,12 @@ if (isset($_GET['id'])) {
     $movie_result = myQuery($movie_sql);
     $movie = $movie_result->fetch_assoc();
 
+    // Terminate if movie doesn't exist
     if (!$movie) die("Movie not found.");
 
-    // 2. CAST
+    // Retrieve cast members for this movie
+    // Limits to top 6 cast members ordered by cast_order (billing order)
+    // Includes character name played by each cast member
     $cast_sql = "SELECT c.name, mc.character_name, c.photo_url 
                  FROM cast_members c
                  JOIN movie_cast mc ON c.cast_id = mc.cast_id
@@ -24,7 +36,8 @@ if (isset($_GET['id'])) {
                  ORDER BY mc.cast_order ASC LIMIT 6";
     $cast_result = myQuery($cast_sql);
 
-    // 3. CREW
+    // Retrieve crew members for key roles only
+    // Filters for Director, Writer, and Producer roles
     $crew_sql = "SELECT cm.name, mcrew.role 
                  FROM crew_members cm
                  JOIN movie_crew mcrew ON cm.crew_id = mcrew.crew_id
@@ -32,7 +45,9 @@ if (isset($_GET['id'])) {
                  AND mcrew.role IN ('Director', 'Writer', 'Producer')";
     $crew_result = myQuery($crew_sql);
 
-    // 4. REVIEWS
+    // Retrieve recent reviews for this movie
+    // JOINs with users table to get reviewer usernames
+    // Limits to 5 most recent reviews
     $review_sql = "SELECT r.rating_value, r.review_text, u.username, r.created_at
                    FROM reviews r
                    JOIN users u ON r.user_id = u.user_id
@@ -40,6 +55,8 @@ if (isset($_GET['id'])) {
                    ORDER BY r.created_at DESC LIMIT 5";
     $review_result = myQuery($review_sql);
 
+    // Convert runtime from minutes to hours and minutes format
+    // Example: 120 minutes -> "2h 0m"
     $hours = floor($movie['runtime'] / 60);
     $minutes = $movie['runtime'] % 60;
     $runtime_str = "{$hours}h {$minutes}m";

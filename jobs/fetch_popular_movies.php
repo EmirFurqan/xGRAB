@@ -2,6 +2,9 @@
 /**
  * TMDB API - Fetch Popular Movies Job
  * 
+ * Background job that fetches popular movies from The Movie Database (TMDB) API
+ * and imports them into the local database with full details including cast, crew, and genres.
+ * 
  * Endpoint: http://localhost/Movie/jobs/fetch_popular_movies.php
  * 
  * Parameters (GET or POST):
@@ -11,20 +14,32 @@
  * 
  * Example: 
  * http://localhost/Movie/jobs/fetch_popular_movies.php?api_key=YOUR_API_KEY&page=1&limit=20
+ * 
+ * This script:
+ * - Fetches movie data from TMDB API
+ * - Creates movie records with poster images, ratings, and metadata
+ * - Maps TMDB genres to local genre database
+ * - Fetches and creates cast members with biographies
+ * - Fetches and creates crew members (directors, writers, etc.)
+ * - Links movies to cast and crew via junction tables
  */
 
 header('Content-Type: application/json');
 // Set execution time limit to 12 hours (43200 seconds) for long-running movie fetches
+// This allows processing large batches of movies without timeout
 set_time_limit(43200);
 ini_set('max_execution_time', 43200);
 require("../connect.php");
 
-// Configuration
+// TMDB API configuration
+// Base URL for TMDB API v3 endpoints
 $TMDB_API_BASE = "https://api.themoviedb.org/3";
-$TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500"; // For poster images
-$TMDB_PROFILE_BASE = "https://image.tmdb.org/t/p/w185"; // For cast/crew photos
+// Base URL for movie poster images (w500 = 500px width)
+$TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
+// Base URL for cast/crew profile photos (w185 = 185px width)
+$TMDB_PROFILE_BASE = "https://image.tmdb.org/t/p/w185";
 
-// Get parameters
+// Extract and validate parameters from GET or POST request
 $api_key = isset($_GET['api_key']) ? $_GET['api_key'] : (isset($_POST['api_key']) ? $_POST['api_key'] : '');
 $page = isset($_GET['page']) ? (int)$_GET['page'] : (isset($_POST['page']) ? (int)$_POST['page'] : 1);
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : (isset($_POST['limit']) ? (int)$_POST['limit'] : 20);

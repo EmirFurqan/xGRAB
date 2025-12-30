@@ -1,20 +1,20 @@
 <?php
 
 /**
- * Belirtilen fotoğrafın, web sunucusunun kök dizinine (/) göre yolunu döndürür.
- * Bu yol, PHP dosyanızın nerede (hangi klasörde) olduğundan bağımsız olarak, 
- * tarayıcının fotoğrafı bulmasını sağlar.
+ * Simplified Image Path Handler for src/App directory
+ * Returns the web-accessible path for an image file relative to the web server root.
+ * This is a simplified version that assumes images are always in /uploads/ directory.
  *
- * @param string $fileName Fotoğrafın dosya adı (örneğin: "avatar.png").
- * @return string HTML <img> src özniteliği için uygun yol (örn: "/uploads/avatar.png").
+ * @param string $fileName The image file name (e.g., "avatar.png").
+ * @return string HTML <img> src attribute compatible path (e.g., "/uploads/avatar.png").
  */
 function getImagePath($fileName) {
-    
-    // Fotoğraflarınızın, web sitesinin kök dizinine göre nerede bulunduğunu belirtin.
-    // Sizin durumunuzda, fotoğraf klasörü doğrudan kökteki 'uploads' klasörüdür.
+    // Define the image directory path relative to web server root
+    // This simplified version assumes all images are in the /uploads/ directory
+    // Unlike the root image_handler.php, this doesn't detect project subdirectory
     $imageDirectory = '/uploads/'; 
     
-    // Yolu birleştirip döndürün.
+    // Combine directory path with filename to create complete web-accessible path
     $imagePath = $imageDirectory . $fileName;
     
     return $imagePath;

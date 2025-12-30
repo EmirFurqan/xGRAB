@@ -1,40 +1,50 @@
 <?php
+/**
+ * Admin Dashboard
+ * Displays system-wide statistics and recent admin activity.
+ * Access restricted to users with admin privileges.
+ */
+
 session_start();
 require("../connect.php");
 
+// Verify user is logged in and has admin privileges
 if (!isset($_SESSION['user_id']) || !$_SESSION['is_admin']) {
     die("Access Denied");
 }
 
-// Get statistics
+// Calculate system statistics for dashboard display
 $stats = [];
 
-// Total movies
+// Count total movies in database
 $movies_sql = "SELECT COUNT(*) as total FROM movies";
 $movies_result = myQuery($movies_sql);
 $stats['movies'] = mysqli_fetch_assoc($movies_result)['total'];
 
-// Total users
+// Count total registered users
 $users_sql = "SELECT COUNT(*) as total FROM users";
 $users_result = myQuery($users_sql);
 $stats['users'] = mysqli_fetch_assoc($users_result)['total'];
 
-// Total reviews
+// Count total reviews submitted by users
 $reviews_sql = "SELECT COUNT(*) as total FROM reviews";
 $reviews_result = myQuery($reviews_sql);
 $stats['reviews'] = mysqli_fetch_assoc($reviews_result)['total'];
 
-// Total watchlists
+// Count total watchlists created by users
 $watchlists_sql = "SELECT COUNT(*) as total FROM watchlists";
 $watchlists_result = myQuery($watchlists_sql);
 $stats['watchlists'] = mysqli_fetch_assoc($watchlists_result)['total'];
 
-// Flagged reviews
+// Count reviews that have been flagged for moderation
+// These require admin attention
 $flagged_sql = "SELECT COUNT(*) as total FROM reviews WHERE is_flagged = TRUE";
 $flagged_result = myQuery($flagged_sql);
 $stats['flagged_reviews'] = mysqli_fetch_assoc($flagged_result)['total'];
 
-// Recent admin activity
+// Retrieve recent admin activity log entries
+// JOIN with users table to get admin usernames
+// Ordered by most recent first, limited to 10 entries
 $activity_sql = "SELECT al.*, u.username 
                  FROM admin_logs al 
                  JOIN users u ON al.admin_id = u.user_id 

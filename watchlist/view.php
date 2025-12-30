@@ -1,13 +1,21 @@
 <?php
+/**
+ * Watchlist Detail View Page
+ * Displays all movies in a specific watchlist with sorting options.
+ * Shows favorite and watched status for each movie if user is logged in.
+ */
+
 session_start();
 require("../connect.php");
 require("../image_handler.php");
 
+// Require user to be logged in to view watchlists
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
 }
 
+// Validate watchlist ID parameter
 if (!isset($_GET['id'])) {
     header("Location: index.php");
     exit();
@@ -16,21 +24,23 @@ if (!isset($_GET['id'])) {
 $watchlist_id = (int) $_GET['id'];
 $user_id = $_SESSION['user_id'];
 
-// Get watchlist info
+// Retrieve watchlist information and verify ownership
 $watchlist_sql = "SELECT * FROM watchlists WHERE watchlist_id = $watchlist_id AND user_id = $user_id";
 $watchlist_result = myQuery($watchlist_sql);
 
+// Redirect if watchlist doesn't exist or user doesn't own it
 if (mysqli_num_rows($watchlist_result) == 0) {
     header("Location: index.php");
     exit();
 }
 $watchlist = mysqli_fetch_assoc($watchlist_result);
 
-// Get sort parameter
+// Extract and sanitize sorting parameters from URL
 $sort_by = isset($_GET['sort']) ? escapeString($_GET['sort']) : 'date_added';
 $sort_order = isset($_GET['order']) ? escapeString($_GET['order']) : 'DESC';
 
-// Build ORDER BY
+// Build ORDER BY clause based on sort parameter
+// Maps sort options to appropriate database columns
 $order_by = "wm.date_added";
 if ($sort_by == 'title') {
     $order_by = "m.title";
@@ -40,7 +50,9 @@ if ($sort_by == 'title') {
     $order_by = "wm.date_added";
 }
 
-// Get movies in watchlist
+// Retrieve all movies in this watchlist with full movie details
+// JOINs with movies table to get complete movie information
+// Includes personal_notes and date_added from watchlist_movies junction table
 $sql = "SELECT m.*, wm.personal_notes, wm.date_added 
         FROM watchlist_movies wm 
         JOIN movies m ON wm.movie_id = m.movie_id 
@@ -48,21 +60,26 @@ $sql = "SELECT m.*, wm.personal_notes, wm.date_added
         ORDER BY $order_by $sort_order";
 $result = myQuery($sql);
 
-// Get favorite status and watched status for all movies in watchlist (if user is logged in)
+// Check favorite and watched status for all movies in watchlist
+// This allows the UI to show which movies are favorited or already watched
 $favorite_movies = [];
 $watched_movies = [];
 if (isset($_SESSION['user_id'])) {
+    // Collect all movie IDs from the watchlist
     mysqli_data_seek($result, 0);
     $movie_ids = [];
     while ($row = mysqli_fetch_assoc($result)) {
         $movie_ids[] = $row['movie_id'];
     }
+    // Reset result pointer for later display
     mysqli_data_seek($result, 0);
 
     if (!empty($movie_ids)) {
+        // Convert to comma-separated string of integers for SQL IN clause
         $movie_ids_str = implode(',', array_map('intval', $movie_ids));
 
-        // Get favorite status
+        // Get favorite status for all movies in watchlist
+        // Single query for efficiency
         $favorites_sql = "SELECT entity_id FROM favorites 
                          WHERE user_id = $user_id 
                          AND entity_type = 'movie' 
@@ -73,6 +90,7 @@ if (isset($_SESSION['user_id'])) {
         }
 
         // Get watched status from user_watched_movies table
+        // Checks which movies user has marked as watched
         $watched_sql = "SELECT movie_id FROM user_watched_movies 
                        WHERE user_id = $user_id 
                        AND movie_id IN ($movie_ids_str)";

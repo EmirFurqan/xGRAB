@@ -1,8 +1,15 @@
 <?php
+/**
+ * Watchlist Management Page
+ * Displays all user watchlists with movie counts and poster previews.
+ * Handles watchlist creation and deletion with ownership verification.
+ */
+
 session_start();
 require("../connect.php");
 require("../image_handler.php");
 
+// Require user to be logged in to manage watchlists
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
@@ -12,15 +19,19 @@ $user_id = $_SESSION['user_id'];
 $error = "";
 $success = "";
 
-// Handle create watchlist (inline form)
+// Handle watchlist creation from inline form
 if (isset($_POST['submit'])) {
     $watchlist_name = escapeString($_POST['watchlist_name']);
 
+    // Validate watchlist name is not empty
     if (empty($watchlist_name)) {
         $error = "Watchlist name is required";
-    } elseif (strlen($watchlist_name) > 50) {
+    }
+    // Validate watchlist name length (database column limit is 50 characters)
+    elseif (strlen($watchlist_name) > 50) {
         $error = "Watchlist name must be 50 characters or less";
     } else {
+        // Insert new watchlist into database
         $insert_sql = "INSERT INTO watchlists (user_id, watchlist_name) VALUES ($user_id, '$watchlist_name')";
         if (myQuery($insert_sql)) {
             $success = "Watchlist created successfully!";
@@ -30,13 +41,16 @@ if (isset($_POST['submit'])) {
     }
 }
 
-// Handle delete watchlist
+// Handle watchlist deletion
 if (isset($_GET['delete'])) {
     $watchlist_id = (int) $_GET['delete'];
-    // Verify ownership
+    
+    // Verify user owns this watchlist before allowing deletion
+    // This prevents users from deleting other users' watchlists
     $check_sql = "SELECT * FROM watchlists WHERE watchlist_id = $watchlist_id AND user_id = $user_id";
     $check_result = myQuery($check_sql);
     if (mysqli_num_rows($check_result) > 0) {
+        // Delete watchlist (CASCADE will delete associated watchlist_movies records)
         $delete_sql = "DELETE FROM watchlists WHERE watchlist_id = $watchlist_id";
         if (myQuery($delete_sql)) {
             $success = "Watchlist deleted successfully";
@@ -48,7 +62,8 @@ if (isset($_GET['delete'])) {
     }
 }
 
-// Get success/error from URL
+// Get success/error messages from URL parameters
+// These are set when redirecting from other pages
 if (isset($_GET['success'])) {
     $success = $_GET['success'];
 }
@@ -56,7 +71,8 @@ if (isset($_GET['error'])) {
     $error = $_GET['error'];
 }
 
-// Get all watchlists for user with movie count
+// Retrieve all watchlists for the current user
+// Includes movie count as a subquery for display
 $sql = "SELECT w.*, 
         (SELECT COUNT(*) FROM watchlist_movies WHERE watchlist_id = w.watchlist_id) as movie_count
         FROM watchlists w 
@@ -64,10 +80,12 @@ $sql = "SELECT w.*,
         ORDER BY w.date_created DESC";
 $result = myQuery($sql);
 
-// Store watchlists and fetch poster previews for each
+// Build watchlist array with poster previews for visual display
+// Each watchlist shows up to 6 movie posters as a preview
 $watchlists = [];
 while ($watchlist = mysqli_fetch_assoc($result)) {
-    // Get up to 6 movie posters for this watchlist
+    // Get up to 6 most recently added movie posters for this watchlist
+    // Ordered by date_added DESC to show newest additions first
     $poster_sql = "SELECT m.poster_image, m.title 
                    FROM watchlist_movies wm 
                    JOIN movies m ON wm.movie_id = m.movie_id 
@@ -79,6 +97,7 @@ while ($watchlist = mysqli_fetch_assoc($result)) {
     while ($poster = mysqli_fetch_assoc($poster_result)) {
         $posters[] = $poster;
     }
+    // Attach poster array to watchlist for display
     $watchlist['posters'] = $posters;
     $watchlists[] = $watchlist;
 }

@@ -1,32 +1,81 @@
 <?php
+/**
+ * Review Like Handler
+ * Handles like/unlike toggle functionality for reviews.
+ * Prevents duplicate likes and self-likes.
+ * Updates like_count in reviews table and maintains review_likes junction table.
+ */
+
 session_start();
 require("../connect.php");
 
+// Require user to be logged in to like reviews
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
 }
 
+// Validate review_id parameter is present
 if (!isset($_POST['review_id'])) {
     header("Location: ../movies/browse.php");
     exit();
 }
 
 $review_id = (int)$_POST['review_id'];
+$user_id = $_SESSION['user_id'];
 
-// Increment like count
-$like_sql = "UPDATE reviews SET like_count = like_count + 1 WHERE review_id = $review_id";
-myQuery($like_sql);
+// First, verify the review exists and get its author
+$review_sql = "SELECT movie_id, user_id FROM reviews WHERE review_id = $review_id";
+$review_result = myQuery($review_sql);
 
-// Get movie_id to redirect back
-$movie_sql = "SELECT movie_id FROM reviews WHERE review_id = $review_id";
-$movie_result = myQuery($movie_sql);
-if (mysqli_num_rows($movie_result) > 0) {
-    $movie = mysqli_fetch_assoc($movie_result);
-    header("Location: ../movies/details.php?id=" . $movie['movie_id']);
-} else {
+if (mysqli_num_rows($review_result) == 0) {
+    // Review doesn't exist, redirect to browse page
     header("Location: ../movies/browse.php");
+    exit();
 }
+
+$review_data = mysqli_fetch_assoc($review_result);
+$movie_id = $review_data['movie_id'];
+$review_author_id = $review_data['user_id'];
+
+// Prevent users from liking their own reviews
+if ($user_id == $review_author_id) {
+    header("Location: ../movies/details.php?id=$movie_id&error=You cannot like your own review");
+    exit();
+}
+
+// Check if user has already liked this review
+$check_like_sql = "SELECT like_id FROM review_likes WHERE review_id = $review_id AND user_id = $user_id";
+$check_like_result = myQuery($check_like_sql);
+$already_liked = mysqli_num_rows($check_like_result) > 0;
+
+if ($already_liked) {
+    // User has already liked, so unlike it
+    // Remove the like record from review_likes table
+    $delete_like_sql = "DELETE FROM review_likes WHERE review_id = $review_id AND user_id = $user_id";
+    myQuery($delete_like_sql);
+    
+    // Decrement like_count in reviews table
+    // Use MAX to prevent negative counts
+    $update_sql = "UPDATE reviews SET like_count = GREATEST(0, like_count - 1) WHERE review_id = $review_id";
+    myQuery($update_sql);
+    
+    $action = "unliked";
+} else {
+    // User hasn't liked yet, so like it
+    // Insert like record into review_likes table
+    $insert_like_sql = "INSERT INTO review_likes (review_id, user_id) VALUES ($review_id, $user_id)";
+    myQuery($insert_like_sql);
+    
+    // Increment like_count in reviews table
+    $update_sql = "UPDATE reviews SET like_count = like_count + 1 WHERE review_id = $review_id";
+    myQuery($update_sql);
+    
+    $action = "liked";
+}
+
+// Redirect back to movie details page
+header("Location: ../movies/details.php?id=$movie_id");
 exit();
 ?>
 

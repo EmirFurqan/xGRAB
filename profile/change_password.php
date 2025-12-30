@@ -1,7 +1,14 @@
 <?php
+/**
+ * Password Change Page
+ * Allows logged-in users to change their password with validation.
+ * Requires current password verification before allowing change.
+ */
+
 session_start();
 require("../connect.php");
 
+// Require user to be logged in to change password
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
@@ -11,31 +18,43 @@ $user_id = $_SESSION['user_id'];
 $error = "";
 $success = "";
 
+// Process password change form submission
 if (isset($_POST['submit'])) {
+    // Hash current password with MD5 to compare with stored hash
     $current_password = md5($_POST['current_password']);
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
 
-    // Verify current password
+    // Verify that entered current password matches stored password
+    // This prevents unauthorized password changes
     $check_sql = "SELECT * FROM users WHERE user_id = $user_id AND password_hash = '$current_password'";
     $check_result = myQuery($check_sql);
 
     if (mysqli_num_rows($check_result) == 0) {
         $error = "Current password is incorrect";
     }
-    // Validate new password
+    // Validate new password meets minimum length requirement
     elseif (strlen($new_password) < 8) {
         $error = "Password must be at least 8 characters long";
-    } elseif (!preg_match('/[A-Z]/', $new_password)) {
+    }
+    // Require at least one uppercase letter for password complexity
+    elseif (!preg_match('/[A-Z]/', $new_password)) {
         $error = "Password must contain at least one uppercase letter";
-    } elseif (!preg_match('/[0-9]/', $new_password)) {
+    }
+    // Require at least one numeric digit
+    elseif (!preg_match('/[0-9]/', $new_password)) {
         $error = "Password must contain at least one number";
-    } elseif (!preg_match('/[^A-Za-z0-9]/', $new_password)) {
+    }
+    // Require at least one special character (non-alphanumeric)
+    elseif (!preg_match('/[^A-Za-z0-9]/', $new_password)) {
         $error = "Password must contain at least one special character";
-    } elseif ($new_password !== $confirm_password) {
+    }
+    // Verify password confirmation matches new password
+    elseif ($new_password !== $confirm_password) {
         $error = "New passwords do not match";
     } else {
-        // Update password
+        // Hash new password with MD5 and update database
+        // Note: MD5 is cryptographically weak; consider upgrading to bcrypt or Argon2
         $new_password_hash = md5($new_password);
         $update_sql = "UPDATE users SET password_hash = '$new_password_hash' WHERE user_id = $user_id";
         if (myQuery($update_sql)) {

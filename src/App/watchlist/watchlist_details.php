@@ -1,35 +1,51 @@
 <?php
+/**
+ * Watchlist Details Page (src/App directory)
+ * Alternative watchlist detail view implementation.
+ * Displays all movies in a watchlist with watched status indicators.
+ * Handles movie removal from watchlist.
+ * This is an alternative implementation to the root watchlist/view.php.
+ */
+
 session_start();
 require_once '../../Core/connect.php'; 
 
+// Verify user is logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: http://10.1.7.100:7777/auth.gr2025-022.com.php?mode=login");
     exit;
 }
 
 $user_id = $_SESSION['user_id'];
+// Validate watchlist ID parameter
 if (!isset($_GET['id'])) die("No ID specified.");
 $watchlist_id = intval($_GET['id']);
 
-// 1. HANDLE REMOVE MOVIE
+// Handle movie removal from watchlist
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['remove_movie_id'])) {
     $remove_id = intval($_POST['remove_movie_id']);
-    // Verify ownership before deleting
+    
+    // Verify watchlist ownership before allowing deletion
+    // This prevents users from removing movies from other users' watchlists
     $verify_sql = "SELECT w.watchlist_id FROM watchlists w WHERE w.watchlist_id = $watchlist_id AND w.user_id = $user_id";
     $verify = myQuery($verify_sql);
     
     if ($verify->num_rows > 0) {
+        // Remove movie from watchlist
         myQuery("DELETE FROM watchlist_movies WHERE watchlist_id = $watchlist_id AND movie_id = $remove_id");
     }
 }
 
-// 2. GET LIST INFO (AND VERIFY OWNER)
+// Retrieve watchlist information and verify ownership
 $list_sql = "SELECT * FROM watchlists WHERE watchlist_id = $watchlist_id AND user_id = $user_id";
 $list_result = myQuery($list_sql);
 if ($list_result->num_rows == 0) die("Access Denied.");
 $list = $list_result->fetch_assoc();
 
-// 3. GET MOVIES (with watched status from user_watched_movies)
+// Retrieve all movies in this watchlist with watched status
+// LEFT JOIN with user_watched_movies to determine if user has watched each movie
+// CASE statement converts NULL check to boolean (1 if watched, 0 if not)
+// Ordered by date_added (most recently added first)
 $movies_sql = "SELECT m.movie_id, m.title, m.poster_image, m.release_year, m.average_rating,
                       CASE WHEN uwm.movie_id IS NOT NULL THEN 1 ELSE 0 END as is_watched
                FROM watchlist_movies wm

@@ -1,9 +1,16 @@
 <?php
+/**
+ * Movie Browse Page
+ * Provides advanced filtering, searching, and sorting for movies.
+ * Supports pagination, genre filtering, year range, rating filters, and search.
+ */
+
 session_start();
 require("../connect.php");
 require("../image_handler.php");
 
-// Get filter parameters
+// Extract and sanitize filter parameters from URL query string
+// These parameters control what movies are displayed
 $search = isset($_GET['search']) ? escapeString($_GET['search']) : '';
 $genre_ids = isset($_GET['genres']) ? $_GET['genres'] : [];
 $year_from = isset($_GET['year_from']) ? (int) $_GET['year_from'] : 0;
@@ -12,22 +19,30 @@ $min_rating = isset($_GET['min_rating']) ? (float) $_GET['min_rating'] : 0;
 $sort_by = isset($_GET['sort_by']) ? escapeString($_GET['sort_by']) : 'rating';
 $sort_order = isset($_GET['sort_order']) ? escapeString($_GET['sort_order']) : 'DESC';
 $category = isset($_GET['category']) ? escapeString($_GET['category']) : 'all';
+
+// Calculate pagination parameters
+// Default to page 1 if not specified, display 24 movies per page
 $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
 $per_page = 24;
 $offset = ($page - 1) * $per_page;
 
-// Build WHERE clause
+// Build dynamic WHERE clause conditions based on filters
+// Conditions are stored in array and joined with AND
 $where_conditions = [];
 $join_clauses = [];
 
-// Search by title or actor
+// Search functionality: search by movie title or cast member name
+// Uses LIKE with wildcards for partial matching
+// Requires LEFT JOIN to cast_members table for actor search
 if (!empty($search)) {
     $where_conditions[] = "(m.title LIKE '%$search%' OR cm.name LIKE '%$search%')";
     $join_clauses[] = "LEFT JOIN movie_cast mc_search ON m.movie_id = mc_search.movie_id";
     $join_clauses[] = "LEFT JOIN cast_members cm ON mc_search.cast_id = cm.cast_id";
 }
 
-// Filter by genres
+// Filter by selected genres
+// Uses subquery to find movies that have any of the selected genre IDs
+// Converts genre IDs to integers for safety
 if (!empty($genre_ids) && is_array($genre_ids)) {
     $genre_ids_escaped = array_map('intval', $genre_ids);
     $genre_ids_str = implode(',', $genre_ids_escaped);
@@ -36,7 +51,8 @@ if (!empty($genre_ids) && is_array($genre_ids)) {
     )";
 }
 
-// Filter by year range
+// Filter by release year range
+// Only applies filter if year values are greater than 0
 if ($year_from > 0) {
     $where_conditions[] = "m.release_year >= $year_from";
 }
@@ -44,25 +60,31 @@ if ($year_to > 0) {
     $where_conditions[] = "m.release_year <= $year_to";
 }
 
-// Filter by rating
+// Filter by minimum average rating
+// Only applies if minimum rating is greater than 0
 if ($min_rating > 0) {
     $where_conditions[] = "m.average_rating >= $min_rating";
 }
 
-// Category filters
+// Category-based filtering and sorting
+// These preset categories override sort_by parameter
 if ($category == 'popular') {
+    // Popular movies: must have at least one rating
     $where_conditions[] = "m.total_ratings > 0";
     $sort_by = 'total_ratings';
 } elseif ($category == 'top_rated') {
+    // Top rated: must have a rating above 0
     $where_conditions[] = "m.average_rating > 0";
     $sort_by = 'average_rating';
 } elseif ($category == 'upcoming') {
+    // Upcoming: release year is in the future
     $current_year = date('Y');
     $where_conditions[] = "m.release_year > $current_year";
     $sort_by = 'release_year';
 }
 
-// Build ORDER BY
+// Build ORDER BY clause based on sort_by parameter
+// Maps sort options to actual database columns
 $order_by = "m.$sort_by";
 if ($sort_by == 'title') {
     $order_by = "m.title";
@@ -74,7 +96,8 @@ if ($sort_by == 'title') {
     $order_by = "m.total_ratings";
 }
 
-// Build final query
+// Construct final SQL query with all filters and sorting
+// Uses subquery to get comma-separated genre names for each movie
 $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
 $join_clause = !empty($join_clauses) ? implode(" ", array_unique($join_clauses)) : "";
 
@@ -91,7 +114,8 @@ $sql = "SELECT DISTINCT m.*,
 
 $result = myQuery($sql);
 
-// Get total count for pagination
+// Calculate total movie count for pagination
+// Uses same WHERE and JOIN clauses as main query for accurate count
 $count_sql = "SELECT COUNT(DISTINCT m.movie_id) as total
               FROM movies m
               $join_clause
