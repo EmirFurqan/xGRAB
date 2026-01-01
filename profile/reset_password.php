@@ -21,8 +21,9 @@ if (isset($_GET['token'])) {
 
     // Verify token is valid, not expired, and not already used
     // Token must exist, expire time must be in future, and used flag must be false
-    $token_sql = "SELECT * FROM password_reset_tokens 
-                  WHERE token = '$token' AND expires_at > NOW() AND used = FALSE";
+    // Using UTC_TIMESTAMP() for consistent timezone handling with token creation
+    $token_sql = "SELECT *, expires_at, UTC_TIMESTAMP() as current_utc FROM password_reset_tokens 
+                  WHERE token = '$token' AND expires_at > UTC_TIMESTAMP() AND used = FALSE";
     $token_result = myQuery($token_sql);
 
     if (mysqli_num_rows($token_result) == 0) {
@@ -98,12 +99,10 @@ elseif (isset($_POST['request_reset'])) {
         // bin2hex converts binary to hexadecimal string (64 characters)
         $token = bin2hex(random_bytes(32));
 
-        // Set token expiration to 1 hour from now
-        $expires_at = date('Y-m-d H:i:s', strtotime('+1 hour'));
-
-        // Store token in database with expiration time
+        // Store token in database with expiration time (1 hour from now in UTC)
+        // Using MySQL's DATE_ADD with UTC_TIMESTAMP for consistent timezone handling
         $insert_sql = "INSERT INTO password_reset_tokens (user_id, token, expires_at) 
-                       VALUES ($user_id, '$token', '$expires_at')";
+                       VALUES ($user_id, '$token', DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1 HOUR))";
         if (myQuery($insert_sql)) {
             // Generate reset link URL
             // In production, this would be sent via email instead of displayed
@@ -366,9 +365,26 @@ elseif (isset($_POST['request_reset'])) {
                         <form method="post" class="space-y-5" id="resetForm">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-300 mb-2">New Password</label>
-                                <input type="password" name="new_password" id="new_password" required
-                                    placeholder="Enter your new password"
-                                    class="w-full px-5 py-4 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:border-red-500 input-focus transition-all duration-300">
+                                <div class="relative">
+                                    <input type="password" name="new_password" id="new_password" required
+                                        placeholder="Enter your new password"
+                                        class="w-full px-5 py-4 pr-12 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:border-red-500 input-focus transition-all duration-300">
+                                    <button type="button" onclick="togglePassword('new_password', this)"
+                                        class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors duration-300 focus:outline-none"
+                                        aria-label="Toggle password visibility">
+                                        <svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        <svg class="w-5 h-5 eye-closed hidden" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                        </svg>
+                                    </button>
+                                </div>
 
                                 <!-- Password Requirements -->
                                 <div class="mt-3 p-3 rounded-lg bg-gray-900/50 border border-gray-800">
@@ -412,9 +428,26 @@ elseif (isset($_POST['request_reset'])) {
 
                             <div>
                                 <label class="block text-sm font-semibold text-gray-300 mb-2">Confirm New Password</label>
-                                <input type="password" name="confirm_password" id="confirm_password" required
-                                    placeholder="Confirm your new password"
-                                    class="w-full px-5 py-4 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:border-red-500 input-focus transition-all duration-300">
+                                <div class="relative">
+                                    <input type="password" name="confirm_password" id="confirm_password" required
+                                        placeholder="Confirm your new password"
+                                        class="w-full px-5 py-4 pr-12 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:border-red-500 input-focus transition-all duration-300">
+                                    <button type="button" onclick="togglePassword('confirm_password', this)"
+                                        class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors duration-300 focus:outline-none"
+                                        aria-label="Toggle password visibility">
+                                        <svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        <svg class="w-5 h-5 eye-closed hidden" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                        </svg>
+                                    </button>
+                                </div>
                                 <p id="passwordMatch" class="hidden mt-2 text-sm"></p>
                             </div>
 
@@ -547,6 +580,22 @@ elseif (isset($_POST['request_reset'])) {
             } else {
                 passwordMatch.textContent = '✗ Passwords do not match';
                 passwordMatch.className = 'mt-2 text-sm text-red-400';
+            }
+        }
+
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const eyeOpen = button.querySelector('.eye-open');
+            const eyeClosed = button.querySelector('.eye-closed');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeOpen.classList.add('hidden');
+                eyeClosed.classList.remove('hidden');
+            } else {
+                input.type = 'password';
+                eyeOpen.classList.remove('hidden');
+                eyeClosed.classList.add('hidden');
             }
         }
     </script>
