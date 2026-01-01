@@ -440,7 +440,7 @@ $avatar_color = $avatar_colors[$color_index];
                         <a href="../cast/details.php?id=<?php echo $fav['entity_id']; ?>" class="inline-block">
                             <div class="aspect-[2/3] bg-gray-200 rounded overflow-hidden relative w-[120px]">
                                 <?php if ($fav['photo_url']): ?>
-                                    <img src="<?php echo htmlspecialchars($fav['photo_url']); ?>"
+                                    <img src="<?php echo htmlspecialchars(getImagePath($fav['photo_url'], 'cast')); ?>"
                                         alt="<?php echo htmlspecialchars($fav['name']); ?>"
                                         class="w-full h-full object-cover hover:scale-110 transition-transform duration-200 ease-out">
                                 <?php else: ?>

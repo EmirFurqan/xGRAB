@@ -229,7 +229,7 @@ $avatar_colors = [
                             <div
                                 class="w-20 h-20 mx-auto <?php echo $cast['photo_url'] ? 'bg-gray-700' : $cast_color; ?> rounded-full flex items-center justify-center overflow-hidden border-2 border-gray-600 group-hover:border-amber-500 transition-all duration-300 mb-3">
                                 <?php if ($cast['photo_url']): ?>
-                                    <img src="<?php echo htmlspecialchars($cast['photo_url']); ?>"
+                                    <img src="<?php echo htmlspecialchars(getImagePath($cast['photo_url'], 'cast')); ?>"
                                         alt="<?php echo htmlspecialchars($cast['name']); ?>"
                                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
                                 <?php else: ?>

@@ -66,7 +66,7 @@ while ($cast = mysqli_fetch_assoc($cast_result)) {
     $results['cast'][] = [
         'id' => $cast['cast_id'],
         'name' => $cast['name'],
-        'photo' => $cast['photo_url'] ?: null,
+        'photo' => $cast['photo_url'] ? getImagePath($cast['photo_url'], 'cast') : null,
         'url' => 'cast/details.php?id=' . $cast['cast_id']
     ];
 }

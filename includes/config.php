@@ -27,10 +27,22 @@ define('DB_NAME', 'movie');
 // ------------------------------
 
 // Local Environment Base URL
-// Auto-detect protocol and host (includes port) for flexible local development
+// Auto-detect protocol, host, and path for flexible local development
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
 $host = $_SERVER['HTTP_HOST']; // e.g., localhost:8888
-define('BASE_URL', $protocol . "://" . $host . "/xGRAB/");
+
+// Calculate project path relative to document root
+$projectRoot = str_replace('\\', '/', realpath(__DIR__ . '/../'));
+$docRoot = str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT']));
+$path = '/xGRAB/'; // Fallback
+
+if (strpos($projectRoot, $docRoot) === 0) {
+    $folder = substr($projectRoot, strlen($docRoot));
+    $folder = trim($folder, '/');
+    $path = !empty($folder) ? '/' . $folder . '/' : '/';
+}
+
+define('BASE_URL', $protocol . "://" . $host . $path);
 
 // FastPanel Environment Base URL (Uncomment when deploying)
 // define('BASE_URL', 'http://10.1.7.100:7777/st2025-024.com/xGRAB/');

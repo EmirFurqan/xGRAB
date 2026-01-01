@@ -613,7 +613,7 @@ if ($movie['runtime']) {
                         <a href="../cast/details.php?id=<?php echo $cast['cast_id']; ?>" class="flex-shrink-0 w-32 group">
                             <div class="relative mb-3 overflow-hidden rounded-xl">
                                 <?php if ($cast['photo_url']): ?>
-                                    <img src="<?php echo htmlspecialchars($cast['photo_url']); ?>"
+                                    <img src="<?php echo htmlspecialchars(getImagePath($cast['photo_url'], 'cast')); ?>"
                                         alt="<?php echo htmlspecialchars($cast['name']); ?>"
                                         class="w-32 h-40 object-cover group-hover:scale-110 transition-transform duration-300">
                                 <?php else: ?>
@@ -677,7 +677,7 @@ if ($movie['runtime']) {
                                         <div
                                             class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 <?php echo $member['photo_url'] ? '' : $crew_color; ?> flex items-center justify-center">
                                             <?php if ($member['photo_url']): ?>
-                                                <img src="<?php echo htmlspecialchars($member['photo_url']); ?>"
+                                                <img src="<?php echo htmlspecialchars(getImagePath($member['photo_url'], 'crew')); ?>"
                                                     class="w-full h-full object-cover">
                                             <?php else: ?>
                                                 <span class="text-white font-bold"><?php echo htmlspecialchars($crew_initial); ?></span>

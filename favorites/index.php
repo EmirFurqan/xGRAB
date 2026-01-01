@@ -241,7 +241,7 @@ $avatar_colors = [
                                     <div
                                         class="aspect-[2/3] bg-gray-200 flex items-center justify-center relative overflow-hidden">
                                         <?php if ($fav['photo_url']): ?>
-                                            <img src="<?php echo htmlspecialchars($fav['photo_url']); ?>"
+                                            <img src="<?php echo htmlspecialchars(getImagePath($fav['photo_url'], 'cast')); ?>"
                                                 alt="<?php echo htmlspecialchars($fav['name']); ?>"
                                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                                         <?php else: ?>

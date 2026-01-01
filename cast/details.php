@@ -129,7 +129,7 @@ $cast_initial = mb_strtoupper(mb_substr($cast_member['name'], 0, 1, 'UTF-8'));
                 <!-- Cast Member Photo -->
                 <div>
                     <?php if ($cast_member['photo_url']): ?>
-                        <img src="<?php echo htmlspecialchars($cast_member['photo_url']); ?>"
+                        <img src="<?php echo htmlspecialchars(getImagePath($cast_member['photo_url'], 'cast')); ?>"
                             alt="<?php echo htmlspecialchars($cast_member['name']); ?>" class="w-full rounded-lg shadow-lg">
                     <?php else: ?>
                         <div
