@@ -81,7 +81,7 @@ if (isset($_POST['submit'])) {
             <a href="../index.php" class="text-2xl font-bold">Movie Database</a>
             <div class="flex items-center space-x-4">
                 <span>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
-                <a href="../menu.php" class="hover:underline">Menu</a>
+                <a href="../index.php" class="hover:underline">Home</a>
                 <a href="../logout.php" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded">Logout</a>
             </div>
         </div>

@@ -41,19 +41,19 @@ $result = myQuery($sql);
 $favorite_movies = [];
 if (isset($_SESSION['user_id'])) {
     $user_id = $_SESSION['user_id'];
-    
+
     // Collect all movie IDs from both hero carousel and featured grid
     $all_movie_ids = [];
     foreach ($hero_movies as $movie) {
         $all_movie_ids[] = $movie['movie_id'];
     }
-    
+
     // Reset result pointer and collect IDs from featured movies
     mysqli_data_seek($result, 0);
     while ($row = mysqli_fetch_assoc($result)) {
         $all_movie_ids[] = $row['movie_id'];
     }
-    
+
     // Reset result pointer again for later display
     mysqli_data_seek($result, 0);
 
@@ -62,14 +62,14 @@ if (isset($_SESSION['user_id'])) {
     if (!empty($all_movie_ids)) {
         // Convert to integers and remove duplicates for safety
         $movie_ids_str = implode(',', array_map('intval', array_unique($all_movie_ids)));
-        
+
         // Get all favorite movie IDs for this user from the displayed movies
         $favorites_sql = "SELECT entity_id FROM favorites 
                          WHERE user_id = $user_id 
                          AND entity_type = 'movie' 
                          AND entity_id IN ($movie_ids_str)";
         $favorites_result = myQuery($favorites_sql);
-        
+
         // Store favorite movie IDs in array for quick lookup
         while ($fav = mysqli_fetch_assoc($favorites_result)) {
             $favorite_movies[] = $fav['entity_id'];
@@ -803,6 +803,18 @@ if (isset($_SESSION['user_id'])) {
         }
     </script>
     <?php require("includes/footer.php"); ?>
+
+    <script>
+        // Show welcome message when redirected after login
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('login') === 'success') {
+                showToast('Welcome back, <?php echo isset($_SESSION['username']) ? addslashes($_SESSION['username']) : ''; ?>! Ready to find your next favorite movie?', 'success');
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
+    </script>
 </body>
 
 </html>
