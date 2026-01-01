@@ -6,18 +6,24 @@
  */
 
 session_start();
+// Include config if not already loaded
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../includes/config.php')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
 require("../connect.php");
 require("../image_handler.php");
 
 // Require user to be logged in to view watchlists
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'login.php' : '../login.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
 // Validate watchlist ID parameter
 if (!isset($_GET['id'])) {
-    header("Location: index.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'watchlist/index.php' : 'index.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
@@ -30,7 +36,8 @@ $watchlist_result = myQuery($watchlist_sql);
 
 // Redirect if watchlist doesn't exist or user doesn't own it
 if (mysqli_num_rows($watchlist_result) == 0) {
-    header("Location: index.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'watchlist/index.php' : 'index.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 $watchlist = mysqli_fetch_assoc($watchlist_result);

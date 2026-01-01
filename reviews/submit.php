@@ -8,6 +8,10 @@
  */
 
 session_start();
+// Include config if not already loaded
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../includes/config.php')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
 require("../connect.php");
 
 // Detect if request is AJAX
@@ -22,7 +26,8 @@ function sendResponse($success, $message, $movie_id, $is_ajax)
         exit();
     } else {
         $param = $success ? 'success' : 'error';
-        header("Location: ../movies/details.php?id=$movie_id&$param=" . urlencode($message));
+        $redirect_url = defined('BASE_URL') ? BASE_URL . "movies/details.php?id=$movie_id&$param=" . urlencode($message) : "../movies/details.php?id=$movie_id&$param=" . urlencode($message);
+        header("Location: " . $redirect_url);
         exit();
     }
 }
@@ -34,7 +39,8 @@ if (!isset($_SESSION['user_id'])) {
         echo json_encode(['success' => false, 'message' => 'Please log in to submit a review']);
         exit();
     }
-    header("Location: ../login.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'login.php' : '../login.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
@@ -45,7 +51,8 @@ if (!isset($_POST['movie_id']) || !isset($_POST['rating_value']) || !isset($_POS
         echo json_encode(['success' => false, 'message' => 'Missing required fields']);
         exit();
     }
-    header("Location: ../movies/browse.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'movies/browse.php' : '../movies/browse.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 

@@ -14,7 +14,8 @@ $success = "";
 // Redirect users who are already logged in
 // Prevents logged-in users from creating duplicate accounts
 if (isset($_SESSION['user_id'])) {
-    header("Location: index.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'index.php' : 'index.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 

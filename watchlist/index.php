@@ -6,12 +6,17 @@
  */
 
 session_start();
+// Include config if not already loaded (via connect.php)
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../includes/config.php')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
 require("../connect.php");
 require("../image_handler.php");
 
 // Require user to be logged in to manage watchlists
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'login.php' : '../login.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
@@ -44,7 +49,7 @@ if (isset($_POST['submit'])) {
 // Handle watchlist deletion
 if (isset($_GET['delete'])) {
     $watchlist_id = (int) $_GET['delete'];
-    
+
     // Verify user owns this watchlist before allowing deletion
     // This prevents users from deleting other users' watchlists
     $check_sql = "SELECT * FROM watchlists WHERE watchlist_id = $watchlist_id AND user_id = $user_id";

@@ -12,7 +12,13 @@ session_start();
 // This completely logs out the user and clears their session
 session_destroy();
 
+// Include config for BASE_URL if available
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/includes/config.php')) {
+    require_once __DIR__ . '/includes/config.php';
+}
+
 // Redirect to login page after logout
-header("Location: login.php");
+$redirect_url = defined('BASE_URL') ? BASE_URL . 'login.php' : 'login.php';
+header("Location: " . $redirect_url);
 exit();
 ?>

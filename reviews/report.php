@@ -6,21 +6,27 @@
  */
 
 session_start();
+// Include config if not already loaded
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../includes/config.php')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
 require("../connect.php");
 
 // Require user to be logged in to report reviews
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'login.php' : '../login.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
 // Validate review_id parameter is present
 if (!isset($_POST['review_id'])) {
-    header("Location: ../movies/browse.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'movies/browse.php' : '../movies/browse.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
-$review_id = (int)$_POST['review_id'];
+$review_id = (int) $_POST['review_id'];
 $user_id = $_SESSION['user_id'];
 // Get report reason, default to 'Inappropriate content' if not provided
 $reason = isset($_POST['reason']) ? escapeString($_POST['reason']) : 'Inappropriate content';
@@ -32,7 +38,8 @@ $review_result = myQuery($review_sql);
 
 if (mysqli_num_rows($review_result) == 0) {
     // Review doesn't exist, redirect to browse page
-    header("Location: ../movies/browse.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'movies/browse.php' : '../movies/browse.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
@@ -42,7 +49,8 @@ $review_author_id = $review_data['user_id'];
 
 // Prevent users from reporting their own reviews
 if ($user_id == $review_author_id) {
-    header("Location: ../movies/details.php?id=$movie_id&error=You cannot report your own review");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . "movies/details.php?id=$movie_id&error=You cannot report your own review" : "../movies/details.php?id=$movie_id&error=You cannot report your own review";
+    header("Location: " . $redirect_url);
     exit();
 }
 
@@ -53,7 +61,8 @@ $check_result = myQuery($check_sql);
 
 if (mysqli_num_rows($check_result) > 0) {
     // User has already reported this review
-    header("Location: ../movies/details.php?id=$movie_id&error=You have already reported this review");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . "movies/details.php?id=$movie_id&error=You have already reported this review" : "../movies/details.php?id=$movie_id&error=You have already reported this review";
+    header("Location: " . $redirect_url);
     exit();
 }
 
@@ -83,7 +92,7 @@ if ($flag_data['report_count'] >= 3) {
 }
 
 // Redirect back to movie details page
-header("Location: ../movies/details.php?id=$movie_id&success=Review reported successfully");
+$redirect_url = defined('BASE_URL') ? BASE_URL . "movies/details.php?id=$movie_id&success=Review reported successfully" : "../movies/details.php?id=$movie_id&success=Review reported successfully";
+header("Location: " . $redirect_url);
 exit();
 ?>
-

@@ -6,11 +6,17 @@
  */
 
 session_start();
+// Include config if not already loaded (via connect.php)
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../includes/config.php')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
 require("../connect.php");
 
 // Verify user is logged in and has admin privileges
 if (!isset($_SESSION['user_id']) || !$_SESSION['is_admin']) {
-    die("Access Denied");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'login.php' : '../login.php';
+    header("Location: " . $redirect_url);
+    exit();
 }
 
 // Calculate system statistics for dashboard display
@@ -109,31 +115,36 @@ $activity_result = myQuery($activity_sql);
                 class="bg-gray-800 rounded-xl shadow-md p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-l-4 border-red-500 border border-gray-700 fade-in">
                 <p class="text-gray-400 mb-2 text-sm font-medium">Total Movies</p>
                 <p class="text-4xl font-bold bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">
-                    <?php echo $stats['movies']; ?></p>
+                    <?php echo $stats['movies']; ?>
+                </p>
             </div>
             <div
                 class="bg-gray-800 rounded-xl shadow-md p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-l-4 border-red-500 border border-gray-700 fade-in">
                 <p class="text-gray-400 mb-2 text-sm font-medium">Total Users</p>
                 <p class="text-4xl font-bold bg-gradient-to-r from-red-500 to-red-700 bg-clip-text text-transparent">
-                    <?php echo $stats['users']; ?></p>
+                    <?php echo $stats['users']; ?>
+                </p>
             </div>
             <div
                 class="bg-gray-800 rounded-xl shadow-md p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-l-4 border-red-600 border border-gray-700 fade-in">
                 <p class="text-gray-400 mb-2 text-sm font-medium">Total Reviews</p>
                 <p class="text-4xl font-bold bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent">
-                    <?php echo $stats['reviews']; ?></p>
+                    <?php echo $stats['reviews']; ?>
+                </p>
             </div>
             <div
                 class="bg-gray-800 rounded-xl shadow-md p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-l-4 border-red-700 border border-gray-700 fade-in">
                 <p class="text-gray-400 mb-2 text-sm font-medium">Total Watchlists</p>
                 <p class="text-4xl font-bold bg-gradient-to-r from-red-700 to-red-900 bg-clip-text text-transparent">
-                    <?php echo $stats['watchlists']; ?></p>
+                    <?php echo $stats['watchlists']; ?>
+                </p>
             </div>
             <div
                 class="bg-gray-800 rounded-xl shadow-md p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-l-4 border-red-800 border border-gray-700 fade-in">
                 <p class="text-gray-400 mb-2 text-sm font-medium">Flagged Reviews</p>
                 <p class="text-4xl font-bold bg-gradient-to-r from-red-800 to-red-900 bg-clip-text text-transparent">
-                    <?php echo $stats['flagged_reviews']; ?></p>
+                    <?php echo $stats['flagged_reviews']; ?>
+                </p>
             </div>
         </div>
 
@@ -147,7 +158,7 @@ $activity_result = myQuery($activity_sql);
                         class="block px-4 py-3 bg-gradient-to-r from-red-600 to-red-800 text-white rounded-lg hover:from-red-700 hover:to-red-900 transition-all duration-300 shadow-md hover:shadow-lg text-center font-medium">
                         Add New Movie
                     </a>
-                    <a href="../movies/browse.php"
+                    <a href="<?php echo defined('BASE_URL') ? BASE_URL . 'movies/browse.php' : '../movies/browse.php'; ?>"
                         class="block bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-all duration-300 text-center">
                         Browse Movies
                     </a>
@@ -212,9 +223,11 @@ $activity_result = myQuery($activity_sql);
                             <?php while ($activity = mysqli_fetch_assoc($activity_result)): ?>
                                 <tr class="hover:bg-gray-700 transition-colors duration-200">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                                        <?php echo htmlspecialchars($activity['username']); ?></td>
+                                        <?php echo htmlspecialchars($activity['username']); ?>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                                        <?php echo htmlspecialchars($activity['action_type']); ?></td>
+                                        <?php echo htmlspecialchars($activity['action_type']); ?>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                                         <?php echo htmlspecialchars($activity['target_type']); ?>
                                         <?php if ($activity['target_id']): ?>
@@ -222,9 +235,11 @@ $activity_result = myQuery($activity_sql);
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-300">
-                                        <?php echo htmlspecialchars($activity['description']); ?></td>
+                                        <?php echo htmlspecialchars($activity['description']); ?>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                                        <?php echo date('M d, Y H:i', strtotime($activity['created_at'])); ?></td>
+                                        <?php echo date('M d, Y H:i', strtotime($activity['created_at'])); ?>
+                                    </td>
                                 </tr>
                             <?php endwhile; ?>
                         </tbody>

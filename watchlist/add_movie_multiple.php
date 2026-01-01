@@ -6,22 +6,28 @@
  */
 
 session_start();
+// Include config if not already loaded
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../includes/config.php')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
 require("../connect.php");
 
 // Require user to be logged in to add movies to watchlists
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'login.php' : '../login.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
 // Validate required parameters are present
 if (!isset($_POST['watchlist_ids']) || !isset($_POST['movie_id'])) {
-    header("Location: ../movies/browse.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'movies/browse.php' : '../movies/browse.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
 $watchlist_ids = $_POST['watchlist_ids']; // Array of watchlist IDs
-$movie_id = (int)$_POST['movie_id'];
+$movie_id = (int) $_POST['movie_id'];
 $user_id = $_SESSION['user_id'];
 
 // Track success and skip counts for user feedback
@@ -69,13 +75,16 @@ if ($added_count > 0) {
     if ($already_exists_count > 0) {
         $message .= " ($already_exists_count already had it)";
     }
-    header("Location: ../movies/details.php?id=$movie_id&success=" . urlencode($message));
+    $redirect_url = defined('BASE_URL') ? BASE_URL . "movies/details.php?id=$movie_id&success=" . urlencode($message) : "../movies/details.php?id=$movie_id&success=" . urlencode($message);
+    header("Location: " . $redirect_url);
 } elseif ($already_exists_count > 0) {
     // All selected watchlists already contained the movie
-    header("Location: ../movies/details.php?id=$movie_id&error=Movie already in all selected watchlists");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . "movies/details.php?id=$movie_id&error=Movie already in all selected watchlists" : "../movies/details.php?id=$movie_id&error=Movie already in all selected watchlists";
+    header("Location: " . $redirect_url);
 } else {
     // No watchlists were selected or all were invalid
-    header("Location: ../movies/details.php?id=$movie_id&error=No watchlists were selected");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . "movies/details.php?id=$movie_id&error=No watchlists were selected" : "../movies/details.php?id=$movie_id&error=No watchlists were selected";
+    header("Location: " . $redirect_url);
 }
 exit();
 ?>

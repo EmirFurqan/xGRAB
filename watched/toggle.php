@@ -6,17 +6,23 @@
  */
 
 session_start();
+// Include config if not already loaded
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../includes/config.php')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
 require("../connect.php");
 
 // Require user to be logged in to track watched movies
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'login.php' : '../login.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
 // Validate movie_id parameter is present
 if (!isset($_POST['movie_id'])) {
-    header("Location: ../movies/browse.php?error=Invalid request");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'movies/browse.php?error=Invalid request' : '../movies/browse.php?error=Invalid request';
+    header("Location: " . $redirect_url);
     exit();
 }
 
@@ -27,7 +33,8 @@ $movie_id = (int) $_POST['movie_id'];
 $check_movie_sql = "SELECT movie_id FROM movies WHERE movie_id = $movie_id";
 $check_movie_result = myQuery($check_movie_sql);
 if (mysqli_num_rows($check_movie_result) == 0) {
-    header("Location: ../movies/browse.php?error=Movie not found");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'movies/browse.php?error=Movie not found' : '../movies/browse.php?error=Movie not found';
+    header("Location: " . $redirect_url);
     exit();
 }
 

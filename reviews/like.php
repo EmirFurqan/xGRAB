@@ -7,17 +7,23 @@
  */
 
 session_start();
+// Include config if not already loaded
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../includes/config.php')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
 require("../connect.php");
 
 // Require user to be logged in to like reviews
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'login.php' : '../login.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
 // Validate review_id parameter is present
 if (!isset($_POST['review_id'])) {
-    header("Location: ../movies/browse.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'movies/browse.php' : '../movies/browse.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
@@ -30,7 +36,8 @@ $review_result = myQuery($review_sql);
 
 if (mysqli_num_rows($review_result) == 0) {
     // Review doesn't exist, redirect to browse page
-    header("Location: ../movies/browse.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'movies/browse.php' : '../movies/browse.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
@@ -40,7 +47,8 @@ $review_author_id = $review_data['user_id'];
 
 // Prevent users from liking their own reviews
 if ($user_id == $review_author_id) {
-    header("Location: ../movies/details.php?id=$movie_id&error=You cannot like your own review");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . "movies/details.php?id=$movie_id&error=You cannot like your own review" : "../movies/details.php?id=$movie_id&error=You cannot like your own review";
+    header("Location: " . $redirect_url);
     exit();
 }
 
@@ -92,6 +100,7 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQ
 }
 
 // Redirect back to movie details page for non-AJAX requests
-header("Location: ../movies/details.php?id=$movie_id");
+$redirect_url = defined('BASE_URL') ? BASE_URL . "movies/details.php?id=$movie_id" : "../movies/details.php?id=$movie_id";
+header("Location: " . $redirect_url);
 exit();
 ?>

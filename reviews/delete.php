@@ -6,22 +6,28 @@
  */
 
 session_start();
+// Include config if not already loaded
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../includes/config.php')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
 require("../connect.php");
 
 // Require user to be logged in to delete reviews
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'login.php' : '../login.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
 // Validate required parameters are present
 if (!isset($_GET['review_id']) || !isset($_GET['movie_id'])) {
-    header("Location: ../movies/browse.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'movies/browse.php' : '../movies/browse.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
-$review_id = (int)$_GET['review_id'];
-$movie_id = (int)$_GET['movie_id'];
+$review_id = (int) $_GET['review_id'];
+$movie_id = (int) $_GET['movie_id'];
 $user_id = $_SESSION['user_id'];
 
 // Verify that the review belongs to the current user
@@ -30,7 +36,11 @@ $check_sql = "SELECT * FROM reviews WHERE review_id = $review_id AND user_id = $
 $check_result = myQuery($check_sql);
 
 if (mysqli_num_rows($check_result) == 0) {
-    header("Location: ../movies/details.php?id=$movie_id&error=Review not found or access denied");
+    if (defined('BASE_URL')) {
+        header("Location: " . BASE_URL . "movies/details.php?id=$movie_id&error=Review not found or access denied");
+    } else {
+        header("Location: ../movies/details.php?id=$movie_id&error=Review not found or access denied");
+    }
     exit();
 }
 
@@ -48,7 +58,10 @@ $calc_sql = "UPDATE movies SET
              WHERE movie_id = $movie_id";
 myQuery($calc_sql);
 
-header("Location: ../movies/details.php?id=$movie_id&success=Review deleted successfully");
+if (defined('BASE_URL')) {
+    header("Location: " . BASE_URL . "movies/details.php?id=$movie_id&success=Review deleted successfully");
+} else {
+    header("Location: ../movies/details.php?id=$movie_id&success=Review deleted successfully");
+}
 exit();
 ?>
-

@@ -6,11 +6,17 @@
  */
 
 session_start();
+// Include config if not already loaded (via connect.php)
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../includes/config.php')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
 require("../connect.php");
 
 // Verify user has admin privileges
 if (!isset($_SESSION['user_id']) || !$_SESSION['is_admin']) {
-    die("Access Denied");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'login.php' : '../login.php';
+    header("Location: " . $redirect_url);
+    exit();
 }
 
 // Retrieve all reported reviews with full context
@@ -84,13 +90,14 @@ $reports_result = myQuery($reports_sql);
                         <div class="flex justify-between items-start mb-4">
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-100">
-                                    <a href="../movies/details.php?id=<?php echo $report['movie_id']; ?>"
+                                    <a href="<?php echo defined('BASE_URL') ? BASE_URL . 'movies/details.php?id=' . $report['movie_id'] : '../movies/details.php?id=' . $report['movie_id']; ?>"
                                         class="text-red-400 hover:text-red-300 transition-colors duration-300">
                                         <?php echo htmlspecialchars($report['movie_title']); ?>
                                     </a>
                                 </h3>
                                 <p class="text-sm text-gray-400">
-                                    Review by <a href="../profile/view.php?user_id=<?php echo $report['reviewer_id']; ?>"
+                                    Review by <a
+                                        href="<?php echo defined('BASE_URL') ? BASE_URL . 'profile/view.php?user_id=' . $report['reviewer_id'] : '../profile/view.php?user_id=' . $report['reviewer_id']; ?>"
                                         class="text-red-400 hover:text-red-300 transition-colors duration-300">
                                         <?php echo htmlspecialchars($report['reviewer_username']); ?>
                                     </a>

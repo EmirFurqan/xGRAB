@@ -6,12 +6,17 @@
  */
 
 session_start();
+// Include config if not already loaded (via connect.php)
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../includes/config.php')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
 require("../connect.php");
 require("../image_handler.php");
 
 // Validate cast member ID parameter
 if (!isset($_GET['id'])) {
-    header("Location: ../movies/browse.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'movies/browse.php' : '../movies/browse.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
@@ -21,7 +26,8 @@ $cast_id = (int) $_GET['id'];
 $cast_sql = "SELECT * FROM cast_members WHERE cast_id = $cast_id";
 $cast_result = myQuery($cast_sql);
 if (mysqli_num_rows($cast_result) == 0) {
-    header("Location: ../movies/browse.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'movies/browse.php' : '../movies/browse.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 $cast_member = mysqli_fetch_assoc($cast_result);
@@ -183,7 +189,8 @@ $cast_initial = mb_strtoupper(mb_substr($cast_member['name'], 0, 1, 'UTF-8'));
                         <div class="mb-6">
                             <h2 class="text-xl font-bold mb-3 text-gray-100">Biography</h2>
                             <p class="text-gray-300 leading-relaxed">
-                                <?php echo nl2br(htmlspecialchars($cast_member['biography'])); ?></p>
+                                <?php echo nl2br(htmlspecialchars($cast_member['biography'])); ?>
+                            </p>
                         </div>
                     <?php else: ?>
                         <div class="mb-6">
@@ -242,7 +249,8 @@ $cast_initial = mb_strtoupper(mb_substr($cast_member['name'], 0, 1, 'UTF-8'));
                                     <p class="text-xs text-gray-400 mb-2"><?php echo $movie['release_year']; ?></p>
                                     <?php if ($movie['character_name']): ?>
                                         <p class="text-xs text-red-400 font-medium">as
-                                            <?php echo htmlspecialchars($movie['character_name']); ?></p>
+                                            <?php echo htmlspecialchars($movie['character_name']); ?>
+                                        </p>
                                     <?php endif; ?>
                                 </div>
                             </a>

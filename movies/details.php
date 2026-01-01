@@ -5,12 +5,17 @@
  */
 
 session_start();
+// Include config if not already loaded (via connect.php)
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../includes/config.php')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
 require("../connect.php");
 require("../image_handler.php");
 
 // Require movie ID parameter
 if (!isset($_GET['id'])) {
-    header("Location: browse.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'movies/browse.php' : 'browse.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
@@ -21,7 +26,8 @@ $sql = "SELECT * FROM movies WHERE movie_id = $movie_id";
 $result = myQuery($sql);
 
 if (mysqli_num_rows($result) == 0) {
-    header("Location: browse.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'movies/browse.php' : 'browse.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 $movie = mysqli_fetch_assoc($result);

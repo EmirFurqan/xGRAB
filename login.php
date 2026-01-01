@@ -13,7 +13,8 @@ $error = "";
 // Redirect users who are already logged in to prevent duplicate sessions
 // This improves user experience by skipping unnecessary login steps
 if (isset($_SESSION['user_id'])) {
-    header("Location: index.php");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'index.php' : 'index.php';
+    header("Location: " . $redirect_url);
     exit();
 }
 
@@ -69,7 +70,8 @@ if (isset($_POST['submit'])) {
             $_SESSION['login_attempts'] = 0;
 
             // Redirect to main menu after successful authentication
-            header("Location: index.php?login=success");
+            $redirect_url = defined('BASE_URL') ? BASE_URL . 'index.php?login=success' : 'index.php?login=success';
+            header("Location: " . $redirect_url);
             exit();
         } else {
             // Increment failed login attempt counter

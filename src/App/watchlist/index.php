@@ -7,12 +7,17 @@
  */
 
 session_start();
+// Include config if not already loaded
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../../../includes/config.php')) {
+    require_once __DIR__ . '/../../../includes/config.php';
+}
 require_once '../../Core/connect.php';
 
 // Verify user is logged in before showing watchlists
 if (!isset($_SESSION['user_id'])) {
     // Redirect to authentication endpoint
-    header("Location: http://10.1.7.100:7777/auth.gr2025-022.com.php?mode=login");
+    $redirect_url = defined('BASE_URL') ? BASE_URL . 'auth/index.php?mode=login' : '../../auth/index.php?mode=login';
+    header("Location: " . $redirect_url);
     exit;
 }
 
@@ -54,10 +59,12 @@ $result = myQuery($sql);
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>My Watchlists</title>
 </head>
+
 <body style="font-family: sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
 
     <header style="background-color: #fff; padding: 15px; border-bottom: 2px solid #ddd; margin-bottom: 20px;">
@@ -66,33 +73,43 @@ $result = myQuery($sql);
                 <a href="index.php" style="text-decoration: none; color: #333;">MovieDB</a>
             </div>
             <div style="float: right;">
-                <span style="color: #555; margin-right: 15px;">Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?></span>
-                <a href="index.php" style="text-decoration: none; color: #007bff; margin-right: 15px;">Home</a>
-                <a href="http://10.1.7.100:7777/auth.gr2025-022.com.php?mode=login" style="text-decoration: none; color: #d9534f;">Logout</a>
+                <span style="color: #555; margin-right: 15px;">Welcome,
+                    <?php echo htmlspecialchars($_SESSION['username']); ?></span>
+                <a href="<?php echo defined('BASE_URL') ? BASE_URL . 'index.php' : '../../index.php'; ?>"
+                    style="text-decoration: none; color: #007bff; margin-right: 15px;">Home</a>
+                <a href="<?php echo defined('BASE_URL') ? BASE_URL . 'auth/index.php?mode=login' : '../../auth/index.php?mode=login'; ?>"
+                    style="text-decoration: none; color: #d9534f;">Logout</a>
             </div>
         </div>
     </header>
 
     <h1>My Watchlists</h1>
 
-    <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 30px;">
+    <div
+        style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 30px;">
         <h3 style="margin-top: 0;">Create a New List</h3>
         <form method="POST" action="">
-            <input type="text" name="new_list_name" placeholder="e.g. 'Horror Movies' or 'To Watch'" required 
-                   style="padding: 10px; width: 300px; border: 1px solid #ccc; border-radius: 4px;">
-            <button type="submit" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold;">+ Create</button>
+            <input type="text" name="new_list_name" placeholder="e.g. 'Horror Movies' or 'To Watch'" required
+                style="padding: 10px; width: 300px; border: 1px solid #ccc; border-radius: 4px;">
+            <button type="submit"
+                style="padding: 10px 20px; background-color: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold;">+
+                Create</button>
         </form>
-        <?php if($message) echo "<p style='color: #007bff; font-weight: bold;'>$message</p>"; ?>
+        <?php if ($message)
+            echo "<p style='color: #007bff; font-weight: bold;'>$message</p>"; ?>
     </div>
 
     <div>
         <?php if ($result && $result->num_rows > 0): ?>
-            <?php while($row = $result->fetch_assoc()): ?>
-                <a href="watchlist_details.php?id=<?php echo $row['watchlist_id']; ?>" style="text-decoration: none; color: inherit;">
-                    <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; margin-bottom: 15px; border-radius: 5px; transition: 0.3s; cursor: pointer;">
+            <?php while ($row = $result->fetch_assoc()): ?>
+                <a href="watchlist_details.php?id=<?php echo $row['watchlist_id']; ?>"
+                    style="text-decoration: none; color: inherit;">
+                    <div
+                        style="background-color: #fff; padding: 20px; border: 1px solid #ddd; margin-bottom: 15px; border-radius: 5px; transition: 0.3s; cursor: pointer;">
                         <h2 style="margin: 0; color: #007bff;"><?php echo htmlspecialchars($row['watchlist_name']); ?></h2>
                         <p style="color: #666; margin: 5px 0;">
-                            <?php echo $row['item_count']; ?> movies &bull; Created: <?php echo date("M d, Y", strtotime($row['date_created'])); ?>
+                            <?php echo $row['item_count']; ?> movies &bull; Created:
+                            <?php echo date("M d, Y", strtotime($row['date_created'])); ?>
                         </p>
                     </div>
                 </a>
@@ -103,4 +120,5 @@ $result = myQuery($sql);
     </div>
 
 </body>
+
 </html>
