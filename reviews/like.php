@@ -14,7 +14,18 @@ if (!defined('BASE_URL') && file_exists(__DIR__ . '/../includes/config.php')) {
 require("../connect.php");
 
 // Require user to be logged in to like reviews
+// Require user to be logged in to like reviews
 if (!isset($_SESSION['user_id'])) {
+    // Check if it's an AJAX request
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'You must be logged in to like a review.'
+        ]);
+        exit();
+    }
+
     $redirect_url = defined('BASE_URL') ? BASE_URL . 'login.php' : '../login.php';
     header("Location: " . $redirect_url);
     exit();

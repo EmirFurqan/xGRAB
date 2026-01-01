@@ -1,4 +1,10 @@
 <?php
+// Include config if not already loaded (when accessed directly or included)
+if (!defined('BASE_URL')) {
+    if (file_exists(__DIR__ . '/../includes/config.php')) {
+        require_once __DIR__ . '/../includes/config.php';
+    }
+}
 /**
  * Reviews Section Component for Movie Details
  * Handles displaying existing reviews and the review submission form

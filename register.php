@@ -6,6 +6,10 @@
  */
 
 session_start();
+// Include config if not already loaded
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/includes/config.php')) {
+    require_once __DIR__ . '/includes/config.php';
+}
 require("connect.php");
 require("image_handler.php");
 $error = "";

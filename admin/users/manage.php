@@ -6,6 +6,10 @@
  */
 
 session_start();
+// Include config if not already loaded
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../../includes/config.php')) {
+    require_once __DIR__ . '/../../includes/config.php';
+}
 require("../../connect.php");
 
 // Verify user has admin privileges
@@ -86,7 +90,8 @@ $users_result = myQuery($users_sql);
                         <?php while ($user = mysqli_fetch_assoc($users_result)): ?>
                             <tr class="hover:bg-gray-700 transition-colors duration-200">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                                    <?php echo $user['user_id']; ?></td>
+                                    <?php echo $user['user_id']; ?>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     <a href="../../profile/view.php?user_id=<?php echo $user['user_id']; ?>"
                                         class="text-red-400 hover:text-red-300 transition-colors duration-300">
@@ -94,13 +99,17 @@ $users_result = myQuery($users_sql);
                                     </a>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                                    <?php echo htmlspecialchars($user['email']); ?></td>
+                                    <?php echo htmlspecialchars($user['email']); ?>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                                    <?php echo date('M d, Y', strtotime($user['join_date'])); ?></td>
+                                    <?php echo date('M d, Y', strtotime($user['join_date'])); ?>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                                    <?php echo $user['review_count']; ?></td>
+                                    <?php echo $user['review_count']; ?>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                                    <?php echo $user['watchlist_count']; ?></td>
+                                    <?php echo $user['watchlist_count']; ?>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     <?php if ($user['is_admin']): ?>
                                         <span

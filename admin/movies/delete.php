@@ -7,6 +7,10 @@
  */
 
 session_start();
+// Include config if not already loaded
+if (!defined('BASE_URL') && file_exists(__DIR__ . '/../../includes/config.php')) {
+    require_once __DIR__ . '/../../includes/config.php';
+}
 require("../../connect.php");
 
 // Verify user has admin privileges
@@ -20,7 +24,7 @@ if (!isset($_GET['id'])) {
     exit();
 }
 
-$movie_id = (int)$_GET['id'];
+$movie_id = (int) $_GET['id'];
 
 // Retrieve movie title before deletion for logging purposes
 $movie_sql = "SELECT title FROM movies WHERE movie_id = $movie_id";
@@ -49,11 +53,10 @@ if (myQuery($delete_sql)) {
     $log_sql = "INSERT INTO admin_logs (admin_id, action_type, target_type, target_id, description) 
                 VALUES ($admin_id, 'movie_delete', 'movie', $movie_id, 'Deleted movie: $movie_title')";
     myQuery($log_sql);
-    
+
     header("Location: ../dashboard.php?success=" . urlencode("Movie deleted successfully"));
 } else {
     header("Location: ../dashboard.php?error=" . urlencode("Failed to delete movie"));
 }
 exit();
 ?>
-
