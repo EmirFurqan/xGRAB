@@ -2,9 +2,14 @@
 /**
  * Reusable Navigation Component
  * Provides consistent navigation bar across all pages.
- * Automatically adjusts link paths based on current directory depth.
+ * Recently updated to use centralized configuration for paths.
  * Usage: require("includes/nav.php"); or require("../includes/nav.php");
  */
+
+// Include configuration file
+if (file_exists(__DIR__ . '/config.php')) {
+    require_once __DIR__ . '/config.php';
+}
 
 // Include image handler for avatar path generation
 // Check if image_handler.php exists in the expected location relative to this file
@@ -13,36 +18,43 @@ if (file_exists($image_handler_path)) {
     require_once $image_handler_path;
 }
 
-// Determine base path for navigation links based on current directory
-// This ensures links work correctly regardless of which subdirectory the page is in
+// Determine base path for navigation links
+// Priority: Use BASE_URL from config.php if available (Absolute URL)
+// Fallback: Calculate relative path based on directory depth
 $base_path = "";
-$script_path = $_SERVER['PHP_SELF'];
 
-// Normalize path separators to forward slashes
-// Handles Windows backslashes for cross-platform compatibility
-$script_path = str_replace('\\', '/', $script_path);
+if (defined('BASE_URL')) {
+    $base_path = BASE_URL;
+} else {
+    // FALLBACK LOGIC (Only used if config.php is missing or BASE_URL is undefined)
+    $script_path = $_SERVER['PHP_SELF'];
 
-// Detect directory depth and set appropriate base path
-// Two-level deep directories (e.g., admin/users/, admin/movies/) need "../../"
-if (
-    strpos($script_path, '/admin/users/') !== false ||
-    strpos($script_path, '/admin/movies/') !== false ||
-    strpos($script_path, '/admin/reviews/') !== false
-) {
-    // We're in a subdirectory of admin (e.g., admin/users/, admin/movies/)
-    $base_path = "../../";
-} elseif (
-    strpos($script_path, '/admin/') !== false ||
-    strpos($script_path, '/movies/') !== false ||
-    strpos($script_path, '/watchlist/') !== false ||
-    strpos($script_path, '/profile/') !== false ||
-    strpos($script_path, '/reviews/') !== false ||
-    strpos($script_path, '/cast/') !== false ||
-    strpos($script_path, '/favorites/') !== false ||
-    strpos($script_path, '/watched/') !== false
-) {
-    // We're in a first-level subdirectory, need one level up
-    $base_path = "../";
+    // Normalize path separators to forward slashes
+    // Handles Windows backslashes for cross-platform compatibility
+    $script_path = str_replace('\\', '/', $script_path);
+
+    // Detect directory depth and set appropriate base path
+    // Two-level deep directories (e.g., admin/users/, admin/movies/) need "../../"
+    if (
+        strpos($script_path, '/admin/users/') !== false ||
+        strpos($script_path, '/admin/movies/') !== false ||
+        strpos($script_path, '/admin/reviews/') !== false
+    ) {
+        // We're in a subdirectory of admin (e.g., admin/users/, admin/movies/)
+        $base_path = "../../";
+    } elseif (
+        strpos($script_path, '/admin/') !== false ||
+        strpos($script_path, '/movies/') !== false ||
+        strpos($script_path, '/watchlist/') !== false ||
+        strpos($script_path, '/profile/') !== false ||
+        strpos($script_path, '/reviews/') !== false ||
+        strpos($script_path, '/cast/') !== false ||
+        strpos($script_path, '/favorites/') !== false ||
+        strpos($script_path, '/watched/') !== false
+    ) {
+        // We're in a first-level subdirectory, need one level up
+        $base_path = "../";
+    }
 }
 
 // Retrieve user information for navigation display

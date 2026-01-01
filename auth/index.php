@@ -6,6 +6,13 @@
  */
 
 session_start();
+
+// Include configuration file
+$config_path = realpath(__DIR__ . '/../includes/config.php');
+if (file_exists($config_path)) {
+    require_once $config_path;
+}
+
 // Include database connection from src/Core directory
 // This uses a different database connection than the root connect.php
 require_once '../src/Core/connect.php';
@@ -99,7 +106,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 // Redirect to external application URL after successful login
                 // This appears to be a custom redirect for a specific deployment
-                header("Location: http://10.1.7.100:7777/gr2025-022.com");
+                // Redirect to homepage using configured BASE_URL
+                if (defined('BASE_URL')) {
+                    header("Location: " . BASE_URL . "index.php");
+                } else {
+                    header("Location: ../index.php");
+                }
                 exit;
             } else {
                 $error = "Invalid password.";
@@ -174,7 +186,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <h2 style="text-align: center; margin-top: 0; color: #333;">Create Account</h2>
                 <p style="text-align: center; color: #666; margin-bottom: 30px;">Join the community</p>
 
-                <form method="POST" action="auth.gr2025-022.com?mode=register">
+                <form method="POST" action="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>auth/index.php?mode=register">
                     <input type="hidden" name="action" value="register">
 
                     <div style="margin-bottom: 15px;">
@@ -243,7 +255,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </form>
 
                 <div style="margin-top: 20px; text-align: center; font-size: 14px;">
-                    Already have an account? <a href="auth.gr2025-022.com?mode=login"
+                    Already have an account? <a
+                        href="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>auth/index.php?mode=login"
                         style="color: #007bff; text-decoration: none;">Log in</a>
                 </div>
 
@@ -252,7 +265,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <h2 style="text-align: center; margin-top: 0; color: #333;">Welcome Back</h2>
                 <p style="text-align: center; color: #666; margin-bottom: 30px;">Login to your account</p>
 
-                <form method="POST" action="auth.gr2025-022.com?mode=login">
+                <form method="POST" action="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>auth/index.php?mode=login">
                     <input type="hidden" name="action" value="login">
 
                     <div style="margin-bottom: 20px;">
@@ -291,7 +304,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </form>
 
                 <div style="margin-top: 20px; text-align: center; font-size: 14px;">
-                    Don't have an account? <a href="auth.gr2025-022.com?mode=register"
+                    Don't have an account? <a
+                        href="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>auth/index.php?mode=register"
                         style="color: #007bff; text-decoration: none;">Sign up</a>
                 </div>
 

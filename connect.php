@@ -5,6 +5,12 @@
  * This file centralizes database access for the application.
  */
 
+// Include configuration file
+$config_path = __DIR__ . '/includes/config.php';
+if (file_exists($config_path)) {
+    require_once $config_path;
+}
+
 /**
  * Establishes a new MySQL database connection using mysqli.
  * Creates a connection to the local MySQL server with the movie database.
@@ -13,11 +19,16 @@
  */
 function getConnection()
 {
-    // Database connection parameters for local XAMPP environment
-    $servername = "localhost";
-    $username = "root";
-    $password = "root";
-    $dbname = "movie";
+    // Check if constants are defined (from config.php)
+    if (defined('DB_SERVER') && defined('DB_USERNAME') && defined('DB_PASSWORD') && defined('DB_NAME')) {
+        $servername = DB_SERVER;
+        $username = DB_USERNAME;
+        $password = DB_PASSWORD;
+        $dbname = DB_NAME;
+    } else {
+        // Fallback for when config might not be loaded correctly (though it should be)
+        die("Configuration error: Database credentials not found.");
+    }
 
     // Create new mysqli connection object
     $conn = new mysqli($servername, $username, $password, $dbname);
@@ -73,8 +84,4 @@ function escapeString($str)
     return $escaped;
 }
 
-//$servername = "localhost";
-//$username = "root";
-//$password = "j1_vtk4I|Ohj.a%g1vW0O&xb3T";
-//$dbname = "movie";
 ?>
