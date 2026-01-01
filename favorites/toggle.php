@@ -23,7 +23,7 @@ if (!isset($_POST['entity_type']) || !isset($_POST['entity_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $entity_type = escapeString($_POST['entity_type']);
-$entity_id = (int)$_POST['entity_id'];
+$entity_id = (int) $_POST['entity_id'];
 
 // Validate entity_type is one of the allowed types
 // The favorites table supports movies, cast members, and users
@@ -84,51 +84,92 @@ if (isset($_POST['redirect_url'])) {
 }
 
 // Toggle favorite: remove if exists, add if doesn't exist
-if (mysqli_num_rows($check_favorite_result) > 0) {
-    // Remove favorite relationship
-    $delete_sql = "DELETE FROM favorites 
-                   WHERE user_id = $user_id 
-                   AND entity_type = '$entity_type' 
-                   AND entity_id = $entity_id";
-    if (myQuery($delete_sql)) {
-        if ($is_ajax) {
-            // Return JSON response for AJAX requests
-            header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'action' => 'removed', 'message' => 'Removed from favorites']);
-        } else {
-            // Redirect with success message for standard requests
-            header("Location: $redirect_url?success=Removed from favorites");
-        }
+// Check if an explicit intent is provided (add/remove) to handle state mismatches
+$intent = isset($_POST['intent']) ? $_POST['intent'] : null;
+$action_performed = '';
+
+if ($intent === 'add') {
+    // User wants to add
+    if (mysqli_num_rows($check_favorite_result) > 0) {
+        // Already favorited - treat as success
+        $action_performed = 'added';
+        $success = true;
     } else {
-        if ($is_ajax) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'message' => 'Failed to remove favorite']);
+        // Not favorited - insert
+        $insert_sql = "INSERT INTO favorites (user_id, entity_type, entity_id) 
+                       VALUES ($user_id, '$entity_type', $entity_id)";
+        if (myQuery($insert_sql)) {
+            $action_performed = 'added';
+            $success = true;
         } else {
-            header("Location: $redirect_url?error=Failed to remove favorite");
+            $success = false;
+        }
+    }
+} elseif ($intent === 'remove') {
+    // User wants to remove
+    if (mysqli_num_rows($check_favorite_result) == 0) {
+        // Already removed - treat as success
+        $action_performed = 'removed';
+        $success = true;
+    } else {
+        // Favorited - delete
+        $delete_sql = "DELETE FROM favorites 
+                       WHERE user_id = $user_id 
+                       AND entity_type = '$entity_type' 
+                       AND entity_id = $entity_id";
+        if (myQuery($delete_sql)) {
+            $action_performed = 'removed';
+            $success = true;
+        } else {
+            $success = false;
         }
     }
 } else {
-    // Add favorite relationship
-    $insert_sql = "INSERT INTO favorites (user_id, entity_type, entity_id) 
-                   VALUES ($user_id, '$entity_type', $entity_id)";
-    if (myQuery($insert_sql)) {
-        if ($is_ajax) {
-            // Return JSON response for AJAX requests
-            header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'action' => 'added', 'message' => 'Added to favorites']);
+    // Default Toggle Behavior
+    if (mysqli_num_rows($check_favorite_result) > 0) {
+        // Remove
+        $delete_sql = "DELETE FROM favorites 
+                       WHERE user_id = $user_id 
+                       AND entity_type = '$entity_type' 
+                       AND entity_id = $entity_id";
+        if (myQuery($delete_sql)) {
+            $action_performed = 'removed';
+            $success = true;
         } else {
-            // Redirect with success message for standard requests
-            header("Location: $redirect_url?success=Added to favorites");
+            $success = false;
         }
     } else {
-        if ($is_ajax) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'message' => 'Failed to add favorite']);
+        // Add
+        $insert_sql = "INSERT INTO favorites (user_id, entity_type, entity_id) 
+                       VALUES ($user_id, '$entity_type', $entity_id)";
+        if (myQuery($insert_sql)) {
+            $action_performed = 'added';
+            $success = true;
         } else {
-            header("Location: $redirect_url?error=Failed to add favorite");
+            $success = false;
         }
+    }
+}
+
+if ($success) {
+    $message = ($action_performed == 'added') ? 'Added to favorites' : 'Removed from favorites';
+    if ($is_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'action' => $action_performed, 'message' => $message]);
+    } else {
+        header("Location: $redirect_url?success=$message");
+    }
+} else {
+    $error_msg = ($intent === 'add' || ($intent === null && mysqli_num_rows($check_favorite_result) == 0))
+        ? 'Failed to add favorite'
+        : 'Failed to remove favorite';
+
+    if ($is_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => $error_msg]);
+    } else {
+        header("Location: $redirect_url?error=$error_msg");
     }
 }
 exit();
 ?>
-

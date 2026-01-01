@@ -453,8 +453,9 @@ if ($movie['runtime']) {
                                 <input type="hidden" name="entity_id" value="<?php echo $movie_id; ?>">
                                 <input type="hidden" name="redirect_url"
                                     value="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id=' . $movie_id); ?>">
+                                <input type="hidden" name="intent" value="<?php echo $is_favorited ? 'remove' : 'add'; ?>">
                                 <button type="submit"
-                                    class="action-btn flex items-center gap-2 px-5 py-3 rounded-xl font-semibold <?php echo $is_favorited ? 'bg-red-600 text-white' : 'bg-white/10 text-gray-200 hover:bg-white/20'; ?>">
+                                    class="action-btn min-w-[160px] justify-center flex items-center gap-2 px-5 py-3 rounded-xl font-semibold <?php echo $is_favorited ? 'bg-red-600 text-white' : 'bg-white/10 text-gray-200 hover:bg-white/20'; ?>">
                                     <?php if ($is_favorited): ?>
                                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd"
@@ -478,7 +479,7 @@ if ($movie['runtime']) {
                                 <input type="hidden" name="redirect_url"
                                     value="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id=' . $movie_id); ?>">
                                 <button type="submit"
-                                    class="action-btn flex items-center gap-2 px-5 py-3 rounded-xl font-semibold <?php echo $is_watched ? 'bg-green-600 text-white' : 'bg-white/10 text-gray-200 hover:bg-white/20'; ?>">
+                                    class="action-btn min-w-[160px] justify-center flex items-center gap-2 px-5 py-3 rounded-xl font-semibold <?php echo $is_watched ? 'bg-green-600 text-white' : 'bg-white/10 text-gray-200 hover:bg-white/20'; ?>">
                                     <?php if ($is_watched): ?>
                                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd"
@@ -550,7 +551,8 @@ if ($movie['runtime']) {
                 <div class="glass-card rounded-xl p-5 text-center">
                     <div class="text-gray-400 text-sm mb-1">Rating</div>
                     <div class="text-xl font-bold text-yellow-400">★
-                        <?php echo number_format($movie['average_rating'], 1); ?></div>
+                        <?php echo number_format($movie['average_rating'], 1); ?>
+                    </div>
                 </div>
             </div>
         <?php endif; ?>
@@ -621,10 +623,12 @@ if ($movie['runtime']) {
                                 </div>
                             </div>
                             <p class="font-semibold text-sm text-center group-hover:text-red-400 transition-colors truncate">
-                                <?php echo htmlspecialchars($cast['name']); ?></p>
+                                <?php echo htmlspecialchars($cast['name']); ?>
+                            </p>
                             <?php if ($cast['character_name']): ?>
                                 <p class="text-xs text-gray-400 text-center truncate">
-                                    <?php echo htmlspecialchars($cast['character_name']); ?></p>
+                                    <?php echo htmlspecialchars($cast['character_name']); ?>
+                                </p>
                             <?php endif; ?>
                         </a>
                     <?php endwhile; ?>
@@ -695,27 +699,27 @@ if ($movie['runtime']) {
             </h2>
 
             <?php if (isset($_GET['error']) || isset($_GET['success'])): ?>
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    <?php if (isset($_GET['error'])): ?>
-                    if (typeof showToast === 'function') {
-                        showToast(<?php echo json_encode($_GET['error']); ?>, 'error', 5000);
-                    }
-                    <?php endif; ?>
-                    <?php if (isset($_GET['success'])): ?>
-                    if (typeof showToast === 'function') {
-                        showToast(<?php echo json_encode($_GET['success']); ?>, 'success', 4000);
-                    }
-                    <?php endif; ?>
-                    // Clean URL to remove query parameters
-                    if (window.history.replaceState) {
-                        const url = new URL(window.location);
-                        url.searchParams.delete('success');
-                        url.searchParams.delete('error');
-                        window.history.replaceState({}, document.title, url.toString());
-                    }
-                });
-            </script>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        <?php if (isset($_GET['error'])): ?>
+                            if (typeof showToast === 'function') {
+                                showToast(<?php echo json_encode($_GET['error']); ?>, 'error', 5000);
+                            }
+                        <?php endif; ?>
+                        <?php if (isset($_GET['success'])): ?>
+                            if (typeof showToast === 'function') {
+                                showToast(<?php echo json_encode($_GET['success']); ?>, 'success', 4000);
+                            }
+                        <?php endif; ?>
+                        // Clean URL to remove query parameters
+                        if (window.history.replaceState) {
+                            const url = new URL(window.location);
+                            url.searchParams.delete('success');
+                            url.searchParams.delete('error');
+                            window.history.replaceState({}, document.title, url.toString());
+                        }
+                    });
+                </script>
             <?php endif; ?>
 
             <?php require_once 'details_reviews.php'; ?>

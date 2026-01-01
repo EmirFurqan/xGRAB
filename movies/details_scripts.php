@@ -96,7 +96,10 @@
                             const isFavorited = data.action === 'added';
 
                             if (isFavorited) {
-                                button.className = 'action-btn flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-red-600 text-white';
+                                const intentInput = form.querySelector('input[name="intent"]');
+                                if (intentInput) intentInput.value = 'remove';
+
+                                button.className = 'action-btn min-w-[160px] justify-center flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-red-600 text-white';
                                 button.innerHTML = `
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
@@ -104,7 +107,10 @@
                                     <span>Favorited</span>
                                 `;
                             } else {
-                                button.className = 'action-btn flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-white/10 text-gray-200 hover:bg-white/20';
+                                const intentInput = form.querySelector('input[name="intent"]');
+                                if (intentInput) intentInput.value = 'add';
+
+                                button.className = 'action-btn min-w-[160px] justify-center flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-white/10 text-gray-200 hover:bg-white/20';
                                 button.innerHTML = `
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
@@ -162,7 +168,7 @@
                             const isWatched = data.action === 'added';
 
                             if (isWatched) {
-                                button.className = 'action-btn flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-green-600 text-white';
+                                button.className = 'action-btn min-w-[160px] justify-center flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-green-600 text-white';
                                 button.innerHTML = `
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
@@ -170,7 +176,7 @@
                                     <span>Watched</span>
                                 `;
                             } else {
-                                button.className = 'action-btn flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-white/10 text-gray-200 hover:bg-white/20';
+                                button.className = 'action-btn min-w-[160px] justify-center flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-white/10 text-gray-200 hover:bg-white/20';
                                 button.innerHTML = `
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
