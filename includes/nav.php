@@ -226,6 +226,50 @@ $avatar_color = $avatar_colors[$color_index];
                 <?php endif; ?>
             </div>
 
+            <!-- Global Search Bar -->
+            <div class="hidden md:flex flex-1 max-w-md mx-4 relative" id="searchContainer">
+                <form action="<?php echo $base_path; ?>search.php" method="GET" class="w-full" id="searchForm">
+                    <div class="relative">
+                        <input type="text" name="q" id="globalSearchInput" placeholder="Search movies, cast, users..."
+                            autocomplete="off"
+                            class="w-full pl-10 pr-4 py-2 bg-gray-800/80 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all duration-300">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                </form>
+
+                <!-- Search Suggestions Dropdown -->
+                <div id="searchSuggestions"
+                    class="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl overflow-hidden z-[100] hidden">
+                    <div id="searchLoading" class="px-4 py-3 text-gray-400 text-sm hidden">
+                        <div class="flex items-center gap-2">
+                            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg>
+                            Searching...
+                        </div>
+                    </div>
+                    <div id="searchResults"></div>
+                    <div id="searchEmpty" class="px-4 py-3 text-gray-400 text-sm hidden">No results found</div>
+                </div>
+            </div>
+
+            <!-- Mobile Search Toggle -->
+            <button type="button" id="mobileSearchToggle"
+                class="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors text-gray-300">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </button>
+
             <!-- Right Section -->
             <div class="flex items-center space-x-3">
                 <?php if (isset($_SESSION['user_id'])): ?>
@@ -363,6 +407,20 @@ $avatar_color = $avatar_colors[$color_index];
         <!-- Mobile Menu -->
         <?php if (isset($_SESSION['user_id'])): ?>
             <div id="mobileMenu" class="mobile-menu md:hidden border-t border-white/10">
+                <!-- Mobile Search Bar -->
+                <div class="px-4 py-3 border-b border-white/5">
+                    <form action="<?php echo $base_path; ?>search.php" method="GET" class="w-full">
+                        <div class="relative">
+                            <input type="text" name="q" placeholder="Search movies, cast, users..."
+                                class="w-full pl-10 pr-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-all duration-300">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                    </form>
+                </div>
                 <div class="py-3 space-y-1">
                     <a href="<?php echo $base_path; ?>movies/browse.php"
                         class="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
@@ -398,6 +456,23 @@ $avatar_color = $avatar_colors[$color_index];
                     </a>
                 </div>
             </div>
+        <?php else: ?>
+            <!-- Mobile Search for non-logged-in users -->
+            <div id="mobileMenu" class="mobile-menu md:hidden border-t border-white/10">
+                <div class="px-4 py-3">
+                    <form action="<?php echo $base_path; ?>search.php" method="GET" class="w-full">
+                        <div class="relative">
+                            <input type="text" name="q" placeholder="Search movies, cast, users..."
+                                class="w-full pl-10 pr-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-all duration-300">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                    </form>
+                </div>
+            </div>
         <?php endif; ?>
     </div>
 </nav>
@@ -407,6 +482,220 @@ $avatar_color = $avatar_colors[$color_index];
         const menu = document.getElementById('mobileMenu');
         menu.classList.toggle('open');
     }
+
+    // Mobile search toggle
+    document.addEventListener('DOMContentLoaded', function () {
+        const mobileSearchToggle = document.getElementById('mobileSearchToggle');
+        if (mobileSearchToggle) {
+            mobileSearchToggle.addEventListener('click', function () {
+                const menu = document.getElementById('mobileMenu');
+                menu.classList.toggle('open');
+                // Focus on search input when opened
+                setTimeout(() => {
+                    const searchInput = menu.querySelector('input[name="q"]');
+                    if (searchInput && menu.classList.contains('open')) {
+                        searchInput.focus();
+                    }
+                }, 100);
+            });
+        }
+    });
+</script>
+
+<script>
+    // Global Search with AJAX Suggestions
+    (function () {
+        const searchInput = document.getElementById('globalSearchInput');
+        const searchSuggestions = document.getElementById('searchSuggestions');
+        const searchResults = document.getElementById('searchResults');
+        const searchLoading = document.getElementById('searchLoading');
+        const searchEmpty = document.getElementById('searchEmpty');
+        const basePath = '<?php echo $base_path; ?>';
+
+        if (!searchInput || !searchSuggestions) return;
+
+        let debounceTimer;
+        let currentRequest = null;
+
+        // Handle input changes with debounce
+        searchInput.addEventListener('input', function () {
+            const query = this.value.trim();
+
+            clearTimeout(debounceTimer);
+
+            if (query.length < 2) {
+                hideSuggestions();
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                performSearch(query);
+            }, 300);
+        });
+
+        // Handle focus
+        searchInput.addEventListener('focus', function () {
+            if (this.value.trim().length >= 2 && searchResults.innerHTML.trim() !== '') {
+                showSuggestions();
+            }
+        });
+
+        // Handle click outside to close
+        document.addEventListener('click', function (e) {
+            if (!searchSuggestions.contains(e.target) && e.target !== searchInput) {
+                hideSuggestions();
+            }
+        });
+
+        // Handle keyboard navigation
+        searchInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                hideSuggestions();
+                this.blur();
+            }
+        });
+
+        function performSearch(query) {
+            // Cancel previous request
+            if (currentRequest) {
+                currentRequest.abort();
+            }
+
+            showLoading();
+
+            const controller = new AbortController();
+            currentRequest = controller;
+
+            fetch(basePath + 'search_suggest.php?q=' + encodeURIComponent(query), {
+                signal: controller.signal
+            })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    renderResults(data, query);
+                })
+                .catch(err => {
+                    if (err.name !== 'AbortError') {
+                        hideLoading();
+                        hideSuggestions();
+                    }
+                });
+        }
+
+        function renderResults(data, query) {
+            const hasMovies = data.movies && data.movies.length > 0;
+            const hasCast = data.cast && data.cast.length > 0;
+            const hasUsers = data.users && data.users.length > 0;
+
+            if (!hasMovies && !hasCast && !hasUsers) {
+                searchResults.innerHTML = '';
+                searchEmpty.classList.remove('hidden');
+                showSuggestions();
+                return;
+            }
+
+            searchEmpty.classList.add('hidden');
+            let html = '';
+
+            // Movies section
+            if (hasMovies) {
+                html += '<div class="py-2">';
+                html += '<div class="px-4 py-1 text-xs text-gray-400 font-semibold uppercase tracking-wider">🎬 Movies</div>';
+                data.movies.forEach(movie => {
+                    html += `
+                        <a href="${basePath}${movie.url}" class="flex items-center gap-3 px-4 py-2 hover:bg-gray-700/50 transition-colors">
+                            <div class="w-8 h-12 bg-gray-700 rounded overflow-hidden flex-shrink-0">
+                                ${movie.poster ? `<img src="${movie.poster}" alt="" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-xs text-gray-400">🎬</div>'}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-gray-100 truncate">${escapeHtml(movie.title)}</div>
+                                <div class="text-xs text-gray-400">${movie.year} · ★ ${movie.rating}</div>
+                            </div>
+                        </a>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // Cast section
+            if (hasCast) {
+                html += '<div class="py-2 border-t border-gray-700">';
+                html += '<div class="px-4 py-1 text-xs text-gray-400 font-semibold uppercase tracking-wider">⭐ Cast</div>';
+                data.cast.forEach(cast => {
+                    html += `
+                        <a href="${basePath}${cast.url}" class="flex items-center gap-3 px-4 py-2 hover:bg-gray-700/50 transition-colors">
+                            <div class="w-8 h-8 bg-gray-700 rounded-full overflow-hidden flex-shrink-0">
+                                ${cast.photo ? `<img src="${cast.photo}" alt="" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-xs text-gray-400">👤</div>'}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-gray-100 truncate">${escapeHtml(cast.name)}</div>
+                            </div>
+                        </a>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // Users section
+            if (hasUsers) {
+                html += '<div class="py-2 border-t border-gray-700">';
+                html += '<div class="px-4 py-1 text-xs text-gray-400 font-semibold uppercase tracking-wider">👥 Users</div>';
+                data.users.forEach(user => {
+                    html += `
+                        <a href="${basePath}${user.url}" class="flex items-center gap-3 px-4 py-2 hover:bg-gray-700/50 transition-colors">
+                            <div class="w-8 h-8 bg-gray-700 rounded-full overflow-hidden flex-shrink-0">
+                                ${user.avatar ? `<img src="${user.avatar}" alt="" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-xs text-gray-400">👤</div>'}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-gray-100 truncate">${escapeHtml(user.username)}</div>
+                            </div>
+                        </a>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // View all link
+            html += `
+                <div class="py-2 border-t border-gray-700">
+                    <a href="${basePath}search.php?q=${encodeURIComponent(query)}" class="flex items-center justify-center gap-2 px-4 py-2 text-red-400 hover:text-red-300 hover:bg-gray-700/50 transition-colors text-sm font-medium">
+                        <span>View all results</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                        </svg>
+                    </a>
+                </div>
+            `;
+
+            searchResults.innerHTML = html;
+            showSuggestions();
+        }
+
+        function showSuggestions() {
+            searchSuggestions.classList.remove('hidden');
+        }
+
+        function hideSuggestions() {
+            searchSuggestions.classList.add('hidden');
+        }
+
+        function showLoading() {
+            searchLoading.classList.remove('hidden');
+            searchEmpty.classList.add('hidden');
+            searchResults.innerHTML = '';
+            showSuggestions();
+        }
+
+        function hideLoading() {
+            searchLoading.classList.add('hidden');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    })();
 </script>
 
 <script>
