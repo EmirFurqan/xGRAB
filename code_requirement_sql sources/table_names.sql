@@ -264,3 +264,8 @@ CREATE TABLE IF NOT EXISTS review_likes (
 ALTER TABLE movies 
 ADD COLUMN xgrab_average_rating DECIMAL(3,2) DEFAULT 0.00,
 ADD COLUMN xgrab_total_ratings INT DEFAULT 0;
+
+
+-- Add is_banned column to users table
+ALTER TABLE users 
+ADD COLUMN is_banned BOOLEAN DEFAULT FALSE AFTER is_admin;

@@ -49,6 +49,38 @@ while ($row = mysqli_fetch_assoc($current_genres_result)) {
 $genres_sql = "SELECT * FROM genres ORDER BY genre_name";
 $genres_result = myQuery($genres_sql);
 
+// Retrieve current cast members for this movie
+$current_cast_sql = "SELECT cm.*, mc.character_name, mc.cast_order 
+                     FROM movie_cast mc 
+                     JOIN cast_members cm ON mc.cast_id = cm.cast_id 
+                     WHERE mc.movie_id = $movie_id 
+                     ORDER BY mc.cast_order ASC";
+$current_cast_result = myQuery($current_cast_sql);
+
+// Retrieve current crew members for this movie
+$current_crew_sql = "SELECT crm.*, mc.role 
+                     FROM movie_crew mc 
+                     JOIN crew_members crm ON mc.crew_id = crm.crew_id 
+                     WHERE mc.movie_id = $movie_id 
+                     ORDER BY mc.role, crm.name";
+$current_crew_result = myQuery($current_crew_sql);
+
+// Retrieve all available cast members for selection
+$all_cast_sql = "SELECT * FROM cast_members ORDER BY name ASC";
+$all_cast_result = myQuery($all_cast_sql);
+
+// Retrieve all available crew members for selection
+$all_crew_sql = "SELECT * FROM crew_members ORDER BY name ASC";
+$all_crew_result = myQuery($all_crew_sql);
+
+// Check for success/error messages from cast/crew management
+if (isset($_GET['success'])) {
+    $success = $_GET['success'];
+}
+if (isset($_GET['error'])) {
+    $error = $_GET['error'];
+}
+
 // Process movie update form submission
 if (isset($_POST['submit'])) {
     // Extract and sanitize form data
@@ -234,6 +266,150 @@ if (isset($_POST['submit'])) {
                         <?php endwhile; ?>
                     </select>
                     <p class="text-xs text-gray-400 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                </div>
+
+                <!-- Cast Management Section -->
+                <div class="border-t border-gray-700 pt-6">
+                    <h2 class="text-xl font-bold mb-4 text-gray-100">Cast Members</h2>
+                    
+                    <!-- Current Cast Members -->
+                    <?php if (mysqli_num_rows($current_cast_result) > 0): ?>
+                        <div class="mb-4 space-y-2">
+                            <?php
+                            mysqli_data_seek($current_cast_result, 0);
+                            while ($cast = mysqli_fetch_assoc($current_cast_result)):
+                                ?>
+                                <div class="flex items-center justify-between bg-gray-700 p-3 rounded-lg">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-gray-300 font-medium"><?php echo htmlspecialchars($cast['name']); ?></span>
+                                        <?php if ($cast['character_name']): ?>
+                                            <span class="text-gray-400 text-sm">as <?php echo htmlspecialchars($cast['character_name']); ?></span>
+                                        <?php endif; ?>
+                                        <span class="text-gray-500 text-xs">(Order: <?php echo $cast['cast_order']; ?>)</span>
+                                    </div>
+                                    <form method="post" action="manage_cast.php?movie_id=<?php echo $movie_id; ?>" class="inline">
+                                        <input type="hidden" name="cast_id" value="<?php echo $cast['cast_id']; ?>">
+                                        <button type="submit" name="remove_cast"
+                                            class="text-red-400 hover:text-red-300 text-sm transition-colors duration-300"
+                                            onclick="return confirm('Remove <?php echo htmlspecialchars($cast['name']); ?> from this movie?');">
+                                            Remove
+                                        </button>
+                                    </form>
+                                </div>
+                            <?php endwhile; ?>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-gray-400 text-sm mb-4">No cast members added yet.</p>
+                    <?php endif; ?>
+
+                    <!-- Add Cast Member Form -->
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h3 class="text-sm font-medium text-gray-300 mb-3">Add Cast Member</h3>
+                        <form method="post" action="manage_cast.php?movie_id=<?php echo $movie_id; ?>" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Cast Member</label>
+                                <select name="cast_id" required
+                                    class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-100 text-sm">
+                                    <option value="">Select cast member...</option>
+                                    <?php
+                                    mysqli_data_seek($all_cast_result, 0);
+                                    while ($cast = mysqli_fetch_assoc($all_cast_result)):
+                                        // Check if already in movie
+                                        $check_in_movie = "SELECT * FROM movie_cast WHERE movie_id = $movie_id AND cast_id = " . $cast['cast_id'];
+                                        $check_result = myQuery($check_in_movie);
+                                        if (mysqli_num_rows($check_result) == 0):
+                                            ?>
+                                            <option value="<?php echo $cast['cast_id']; ?>">
+                                                <?php echo htmlspecialchars($cast['name']); ?>
+                                            </option>
+                                        <?php endif; ?>
+                                    <?php endwhile; ?>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Character Name</label>
+                                <input type="text" name="character_name" placeholder="Character name"
+                                    class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-100 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Cast Order</label>
+                                <input type="number" name="cast_order" value="0" min="0"
+                                    class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-100 text-sm">
+                            </div>
+                            <div class="flex items-end">
+                                <button type="submit" name="add_cast"
+                                    class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 text-sm font-medium">
+                                    Add
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Crew Management Section -->
+                <div class="border-t border-gray-700 pt-6">
+                    <h2 class="text-xl font-bold mb-4 text-gray-100">Crew Members</h2>
+                    
+                    <!-- Current Crew Members -->
+                    <?php if (mysqli_num_rows($current_crew_result) > 0): ?>
+                        <div class="mb-4 space-y-2">
+                            <?php
+                            mysqli_data_seek($current_crew_result, 0);
+                            while ($crew = mysqli_fetch_assoc($current_crew_result)):
+                                ?>
+                                <div class="flex items-center justify-between bg-gray-700 p-3 rounded-lg">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-gray-300 font-medium"><?php echo htmlspecialchars($crew['name']); ?></span>
+                                        <span class="text-gray-400 text-sm">- <?php echo htmlspecialchars($crew['role']); ?></span>
+                                    </div>
+                                    <form method="post" action="manage_crew.php?movie_id=<?php echo $movie_id; ?>" class="inline">
+                                        <input type="hidden" name="crew_id" value="<?php echo $crew['crew_id']; ?>">
+                                        <input type="hidden" name="role" value="<?php echo htmlspecialchars($crew['role']); ?>">
+                                        <button type="submit" name="remove_crew"
+                                            class="text-red-400 hover:text-red-300 text-sm transition-colors duration-300"
+                                            onclick="return confirm('Remove <?php echo htmlspecialchars($crew['name']); ?> (<?php echo htmlspecialchars($crew['role']); ?>) from this movie?');">
+                                            Remove
+                                        </button>
+                                    </form>
+                                </div>
+                            <?php endwhile; ?>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-gray-400 text-sm mb-4">No crew members added yet.</p>
+                    <?php endif; ?>
+
+                    <!-- Add Crew Member Form -->
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h3 class="text-sm font-medium text-gray-300 mb-3">Add Crew Member</h3>
+                        <form method="post" action="manage_crew.php?movie_id=<?php echo $movie_id; ?>" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Crew Member</label>
+                                <select name="crew_id" required
+                                    class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-100 text-sm">
+                                    <option value="">Select crew member...</option>
+                                    <?php
+                                    mysqli_data_seek($all_crew_result, 0);
+                                    while ($crew = mysqli_fetch_assoc($all_crew_result)):
+                                        ?>
+                                        <option value="<?php echo $crew['crew_id']; ?>">
+                                            <?php echo htmlspecialchars($crew['name']); ?>
+                                        </option>
+                                    <?php endwhile; ?>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Role</label>
+                                <input type="text" name="role" required placeholder="e.g., Director, Writer"
+                                    class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-100 text-sm">
+                            </div>
+                            <div class="flex items-end">
+                                <button type="submit" name="add_crew"
+                                    class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 text-sm font-medium">
+                                    Add
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
                 <div class="flex space-x-3 pt-2">

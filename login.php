@@ -59,24 +59,41 @@ if (isset($_POST['submit'])) {
         if (mysqli_num_rows($res) == 1) {
             // Fetch user data from query result
             $row = mysqli_fetch_assoc($res);
+            
+            // Check if user is banned
+            // Check if is_banned column exists first
+            $check_column_sql = "SHOW COLUMNS FROM users LIKE 'is_banned'";
+            $check_column_result = myQuery($check_column_sql);
+            $is_banned = false;
+            if (mysqli_num_rows($check_column_result) > 0) {
+                $is_banned = isset($row['is_banned']) && $row['is_banned'];
+            }
+            
+            // Only proceed with login if not banned
+            if (!$is_banned) {
+                // Store user information in session for use across the application
+                $_SESSION['user_id'] = $row['user_id'];
+                $_SESSION['username'] = $row['username'];
+                $_SESSION['email'] = $row['email'];
 
-            // Store user information in session for use across the application
-            $_SESSION['user_id'] = $row['user_id'];
-            $_SESSION['username'] = $row['username'];
-            $_SESSION['email'] = $row['email'];
+                // Convert MySQL BOOLEAN (stored as 0/1) to PHP boolean type
+                // This ensures proper boolean evaluation in conditional statements
+                $_SESSION['is_admin'] = (bool) $row['is_admin'];
 
-            // Convert MySQL BOOLEAN (stored as 0/1) to PHP boolean type
-            // This ensures proper boolean evaluation in conditional statements
-            $_SESSION['is_admin'] = (bool) $row['is_admin'];
+                // Reset login attempt counter on successful login
+                // This clears any previous failed attempts
+                $_SESSION['login_attempts'] = 0;
 
-            // Reset login attempt counter on successful login
-            // This clears any previous failed attempts
-            $_SESSION['login_attempts'] = 0;
-
-            // Redirect to main menu after successful authentication
-            $redirect_url = defined('BASE_URL') ? BASE_URL . 'index.php?login=success' : 'index.php?login=success';
-            header("Location: " . $redirect_url);
-            exit();
+                // Redirect to main menu after successful authentication
+                $redirect_url = defined('BASE_URL') ? BASE_URL . 'index.php?login=success' : 'index.php?login=success';
+                header("Location: " . $redirect_url);
+                exit();
+            } else {
+                // User is banned, prevent login
+                $_SESSION['login_attempts']++;
+                $_SESSION['login_attempt_time'] = time();
+                $error = "Your account has been banned. Please contact an administrator.";
+            }
         } else {
             // Increment failed login attempt counter
             // Update timestamp to track when lockout period should expire

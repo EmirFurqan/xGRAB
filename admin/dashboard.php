@@ -196,9 +196,17 @@ $activity_result = myQuery($activity_sql);
                         class="block bg-gradient-to-r from-red-600 to-red-800 text-white px-4 py-2 rounded-lg hover:from-red-700 hover:to-red-900 transition-all duration-300 text-center">
                         Add Cast Member
                     </a>
+                    <a href="cast/index.php"
+                        class="block bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-all duration-300 text-center">
+                        Manage Cast Members
+                    </a>
                     <a href="crew/add.php"
                         class="block bg-gradient-to-r from-red-700 to-red-900 text-white px-4 py-2 rounded-lg hover:from-red-800 hover:to-red-950 transition-all duration-300 text-center">
                         Add Crew Member
+                    </a>
+                    <a href="crew/index.php"
+                        class="block bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-all duration-300 text-center">
+                        Manage Crew Members
                     </a>
                 </div>
             </div>

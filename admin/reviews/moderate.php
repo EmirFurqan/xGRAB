@@ -59,16 +59,51 @@ if (isset($_POST['action'])) {
     }
 }
 
-// Retrieve all flagged reviews for moderation
+// Handle filter and search
+$filter = isset($_GET['filter']) ? escapeString($_GET['filter']) : 'flagged';
+$search = isset($_GET['search']) ? escapeString($_GET['search']) : '';
+$page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+$per_page = 10;
+$offset = ($page - 1) * $per_page;
+
+// Build WHERE clause
+$where_conditions = [];
+if ($filter == 'flagged') {
+    $where_conditions[] = "r.is_flagged = TRUE";
+} elseif ($filter == 'all') {
+    // Show all reviews
+} elseif ($filter == 'reported') {
+    $where_conditions[] = "r.report_count > 0";
+}
+
+if (!empty($search)) {
+    $where_conditions[] = "(m.title LIKE '%$search%' OR u.username LIKE '%$search%')";
+}
+
+$where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
+
+// Retrieve reviews for moderation with pagination
 // JOINs with users and movies tables to get context information
+// Includes user ban status (u.is_banned) to display banned badge
 // Orders by report count (most reported first) then by creation date
-$reviews_sql = "SELECT r.*, u.username, u.email, m.title as movie_title, m.movie_id
+$reviews_sql = "SELECT r.*, u.username, u.email, u.is_banned, m.title as movie_title, m.movie_id
                 FROM reviews r
                 JOIN users u ON r.user_id = u.user_id
                 JOIN movies m ON r.movie_id = m.movie_id
-                WHERE r.is_flagged = TRUE
-                ORDER BY r.report_count DESC, r.created_at DESC";
+                $where_clause
+                ORDER BY r.report_count DESC, r.created_at DESC
+                LIMIT $per_page OFFSET $offset";
 $reviews_result = myQuery($reviews_sql);
+
+// Get total count for pagination
+$count_sql = "SELECT COUNT(*) as total
+              FROM reviews r
+              JOIN users u ON r.user_id = u.user_id
+              JOIN movies m ON r.movie_id = m.movie_id
+              $where_clause";
+$count_result = myQuery($count_sql);
+$total_reviews = mysqli_fetch_assoc($count_result)['total'];
+$total_pages = ceil($total_reviews / $per_page);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -114,6 +149,33 @@ $reviews_result = myQuery($reviews_sql);
             Review Moderation
         </h1>
 
+        <!-- Filter and Search -->
+        <div class="mb-6 bg-gray-800 rounded-xl p-4 border border-gray-700 fade-in">
+            <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Filter</label>
+                    <select name="filter"
+                        class="w-full px-4 py-2 bg-gray-700 border-2 border-gray-600 rounded-lg text-gray-100 focus:border-red-500 focus:ring-2 focus:ring-red-500 transition-all duration-300">
+                        <option value="flagged" <?php echo $filter == 'flagged' ? 'selected' : ''; ?>>Flagged Reviews</option>
+                        <option value="reported" <?php echo $filter == 'reported' ? 'selected' : ''; ?>>All Reported</option>
+                        <option value="all" <?php echo $filter == 'all' ? 'selected' : ''; ?>>All Reviews</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Search</label>
+                    <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>"
+                        placeholder="Movie title or username"
+                        class="w-full px-4 py-2 bg-gray-700 border-2 border-gray-600 rounded-lg text-gray-100 focus:border-red-500 focus:ring-2 focus:ring-red-500 transition-all duration-300">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit"
+                        class="w-full px-4 py-2 bg-gradient-to-r from-red-600 to-red-800 text-white rounded-lg hover:from-red-700 hover:to-red-900 transition-all duration-300 font-medium">
+                        Apply
+                    </button>
+                </div>
+            </form>
+        </div>
+
         <?php if ($error): ?>
             <div class="bg-red-800 border border-red-600 text-red-200 px-4 py-3 rounded-lg mb-4 fade-in">
                 <strong class="font-bold">Error!</strong> <?php echo htmlspecialchars($error); ?>
@@ -148,6 +210,11 @@ $reviews_result = myQuery($reviews_sql);
                                         class="text-red-400 hover:text-red-300 transition-colors duration-300">
                                         <?php echo htmlspecialchars($review['username']); ?>
                                     </a>
+                                    <!-- Banned User Badge -->
+                                    <!-- Display badge only if user is banned -->
+                                    <?php if (isset($review['is_banned']) && $review['is_banned']): ?>
+                                        <span class="bg-red-900 border border-red-700 text-red-200 px-2 py-1 rounded text-xs font-bold ml-2">Banned</span>
+                                    <?php endif; ?>
                                     on <?php echo date('M d, Y', strtotime($review['created_at'])); ?>
                                 </p>
                             </div>
@@ -213,9 +280,43 @@ $reviews_result = myQuery($reviews_sql);
                     </div>
                 <?php endwhile; ?>
             </div>
+
+            <!-- Pagination -->
+            <?php if ($total_pages > 1): ?>
+                <div class="flex justify-center items-center space-x-2 mt-6 fade-in">
+                    <?php if ($page > 1): ?>
+                        <a href="?page=<?php echo $page - 1; ?>&filter=<?php echo $filter; ?>&search=<?php echo urlencode($search); ?>"
+                            class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-all duration-300">
+                            Previous
+                        </a>
+                    <?php endif; ?>
+
+                    <?php
+                    $start_page = max(1, $page - 2);
+                    $end_page = min($total_pages, $page + 2);
+
+                    for ($i = $start_page; $i <= $end_page; $i++):
+                        ?>
+                        <a href="?page=<?php echo $i; ?>&filter=<?php echo $filter; ?>&search=<?php echo urlencode($search); ?>"
+                            class="px-4 py-2 <?php echo $i == $page ? 'bg-red-600' : 'bg-gray-700'; ?> text-white rounded-lg hover:bg-red-700 transition-all duration-300">
+                            <?php echo $i; ?>
+                        </a>
+                    <?php endfor; ?>
+
+                    <?php if ($page < $total_pages): ?>
+                        <a href="?page=<?php echo $page + 1; ?>&filter=<?php echo $filter; ?>&search=<?php echo urlencode($search); ?>"
+                            class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-all duration-300">
+                            Next
+                        </a>
+                    <?php endif; ?>
+                </div>
+                <p class="text-center text-gray-400 text-sm mt-4">
+                    Page <?php echo $page; ?> of <?php echo $total_pages; ?> (<?php echo $total_reviews; ?> total reviews)
+                </p>
+            <?php endif; ?>
         <?php else: ?>
             <div class="bg-gray-800 rounded-xl shadow-md p-8 text-center border border-gray-700 fade-in">
-                <p class="text-gray-400">No flagged reviews to moderate.</p>
+                <p class="text-gray-400">No reviews found.</p>
             </div>
         <?php endif; ?>
     </div>
