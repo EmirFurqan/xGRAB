@@ -258,15 +258,20 @@ $total_pages = ceil($total_reviews / $per_page);
                         <?php endif; ?>
 
                         <div class="flex space-x-3">
-                            <form method="post" class="inline">
-                                <input type="hidden" name="review_id" value="<?php echo $review['review_id']; ?>">
-                                <input type="hidden" name="action" value="approve">
-                                <button type="submit"
-                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-300 shadow-md hover:shadow-lg font-medium"
-                                    onclick="return confirm('Approve this review?');">
-                                    Approve
-                                </button>
-                            </form>
+                            <!-- Approve Button -->
+                            <!-- Only show approve button for reviews that have reports (unreported reviews don't need approval) -->
+                            <?php if ($review['report_count'] > 0): ?>
+                                <form method="post" class="inline">
+                                    <input type="hidden" name="review_id" value="<?php echo $review['review_id']; ?>">
+                                    <input type="hidden" name="action" value="approve">
+                                    <button type="submit"
+                                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-300 shadow-md hover:shadow-lg font-medium"
+                                        onclick="return confirm('Approve this review?');">
+                                        Approve
+                                    </button>
+                                </form>
+                            <?php endif; ?>
+                            <!-- Remove Button -->
                             <form method="post" class="inline">
                                 <input type="hidden" name="review_id" value="<?php echo $review['review_id']; ?>">
                                 <input type="hidden" name="action" value="remove">
