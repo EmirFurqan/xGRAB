@@ -21,7 +21,7 @@ if (!isset($_POST['movie_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$movie_id = (int)$_POST['movie_id'];
+$movie_id = (int) $_POST['movie_id'];
 
 // Verify the movie exists in database before toggling watched status
 $check_movie_sql = "SELECT movie_id FROM movies WHERE movie_id = $movie_id";
@@ -43,14 +43,27 @@ $check_watched_sql = "SELECT * FROM user_watched_movies
                       WHERE user_id = $user_id AND movie_id = $movie_id";
 $check_watched_result = myQuery($check_watched_sql);
 
+// Detect if request is AJAX (for dynamic UI updates without page refresh)
+$is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+
 if (mysqli_num_rows($check_watched_result) > 0) {
     // Remove movie from watched list (user unwatched it)
     $delete_sql = "DELETE FROM user_watched_movies 
                    WHERE user_id = $user_id AND movie_id = $movie_id";
     if (myQuery($delete_sql)) {
-        header("Location: $redirect_url?success=Removed from watched");
+        if ($is_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'action' => 'removed', 'message' => 'Removed from watched']);
+        } else {
+            header("Location: $redirect_url?success=Removed from watched");
+        }
     } else {
-        header("Location: $redirect_url?error=Failed to remove from watched");
+        if ($is_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Failed to remove from watched']);
+        } else {
+            header("Location: $redirect_url?error=Failed to remove from watched");
+        }
     }
 } else {
     // Add movie to watched list
@@ -58,11 +71,20 @@ if (mysqli_num_rows($check_watched_result) > 0) {
     $insert_sql = "INSERT INTO user_watched_movies (user_id, movie_id) 
                    VALUES ($user_id, $movie_id)";
     if (myQuery($insert_sql)) {
-        header("Location: $redirect_url?success=Marked as watched");
+        if ($is_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'action' => 'added', 'message' => 'Marked as watched']);
+        } else {
+            header("Location: $redirect_url?success=Marked as watched");
+        }
     } else {
-        header("Location: $redirect_url?error=Failed to mark as watched");
+        if ($is_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Failed to mark as watched']);
+        } else {
+            header("Location: $redirect_url?error=Failed to mark as watched");
+        }
     }
 }
 exit();
 ?>
-

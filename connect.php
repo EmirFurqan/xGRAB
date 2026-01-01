@@ -11,16 +11,17 @@
  * 
  * @return mysqli Database connection object
  */
-function getConnection() {
+function getConnection()
+{
     // Database connection parameters for local XAMPP environment
     $servername = "localhost";
     $username = "root";
-    $password = "";
+    $password = "root";
     $dbname = "movie";
-    
+
     // Create new mysqli connection object
     $conn = new mysqli($servername, $username, $password, $dbname);
-    
+
     // Check if connection failed and terminate script with error message
     if ($conn->connect_error) {
         die("Connection failed: " . $conn->connect_error);
@@ -36,16 +37,17 @@ function getConnection() {
  * @param string $qry SQL query string to execute
  * @return mysqli_result|bool Query result object on success, false on failure
  */
-function myQuery($qry) {
+function myQuery($qry)
+{
     // Get a fresh database connection
     $conn = getConnection();
-    
+
     // Execute the query using the connection
     $result = mysqli_query($conn, $qry);
-    
+
     // Close the connection immediately after query execution
     mysqli_close($conn);
-    
+
     return $result;
 }
 
@@ -57,16 +59,17 @@ function myQuery($qry) {
  * @param string $str String to escape
  * @return string Escaped string safe for use in SQL queries
  */
-function escapeString($str) {
+function escapeString($str)
+{
     // Get a database connection to access the escape function
     $conn = getConnection();
-    
+
     // Escape special characters using the connection's character set
     $escaped = mysqli_real_escape_string($conn, $str);
-    
+
     // Close the connection
     mysqli_close($conn);
-    
+
     return $escaped;
 }
 
@@ -75,6 +78,3 @@ function escapeString($str) {
 //$password = "j1_vtk4I|Ohj.a%g1vW0O&xb3T";
 //$dbname = "movie";
 ?>
-
-
-    

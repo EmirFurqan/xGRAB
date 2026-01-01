@@ -22,7 +22,7 @@ if (isset($_POST['submit'])) {
     // Sanitize user inputs to prevent SQL injection
     $username = escapeString($_POST['username']);
     $email = escapeString($_POST['email']);
-    
+
     // Store passwords without escaping (hashing will be applied)
     // Passwords should not be escaped as they will be hashed before database storage
     $password = $_POST['password'];
@@ -76,7 +76,7 @@ if (isset($_POST['submit'])) {
                 // Hash password using MD5 algorithm
                 // Note: MD5 is cryptographically weak; consider upgrading to bcrypt or Argon2
                 $password_hash = md5($password);
-                
+
                 // Set join date to current date for tracking when user registered
                 $join_date = date('Y-m-d');
 
@@ -128,12 +128,17 @@ if (isset($_POST['submit'])) {
         <div class="text-center mb-8">
             <div
                 class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-600 to-red-800 rounded-full mb-4">
-                <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                        d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
-                </svg>
+                <?php if (function_exists('getImagePath')): ?>
+                    <img src="<?php echo getImagePath('logo.svg', 'poster'); ?>" alt="Logo" class="w-10 h-10">
+                <?php else: ?>
+                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
+                    </svg>
+                <?php endif; ?>
             </div>
-            <h2 class="text-3xl font-bold bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">Create
+            <h2 class="text-3xl font-bold bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">
+                Create
                 Account</h2>
             <p class="text-gray-400 mt-2">Join our movie community</p>
         </div>
@@ -145,7 +150,8 @@ if (isset($_POST['submit'])) {
         <?php if ($success): ?>
             <div class="bg-green-800 border border-green-600 text-green-200 px-4 py-3 rounded-lg mb-4 fade-in">
                 <strong class="font-bold">Success!</strong> <?php echo htmlspecialchars($success); ?>
-                <br><a href="login.php" class="underline hover:text-green-300 transition-colors duration-300">Click here to
+                <br><a href="login.php" class="underline hover:text-green-300 transition-colors duration-300">Click here
+                    to
                     login</a>
             </div>
         <?php endif; ?>
@@ -177,10 +183,26 @@ if (isset($_POST['submit'])) {
             </button>
         </form>
         <div class="mt-4 text-center">
-            <a href="login.php" class="text-red-400 hover:text-red-300 transition-colors duration-300">Already have an
+            <a href="login.php" class="text-red-400 hover:text-red-300 transition-colors duration-300">Already have
+                an
                 account? Login</a>
         </div>
     </div>
+    <?php require_once 'includes/toast.php'; ?>
+    <?php if ($error): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                showToast('<?php echo addslashes($error); ?>', 'error');
+            });
+        </script>
+    <?php endif; ?>
+    <?php if ($success): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                showToast('<?php echo addslashes($success); ?>', 'success', 5000);
+            });
+        </script>
+    <?php endif; ?>
 </body>
 
 </html>

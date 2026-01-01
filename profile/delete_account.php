@@ -39,7 +39,7 @@ if (isset($_POST['confirm_delete'])) {
         if (myQuery($delete_sql)) {
             // Destroy session to log out the user
             session_destroy();
-            
+
             // Redirect to registration page with success message
             header("Location: ../register.php?message=Account deleted successfully");
             exit();
@@ -110,6 +110,7 @@ if (isset($_POST['confirm_delete'])) {
             </form>
         </div>
     </div>
+    <?php require("../includes/footer.php"); ?>
 </body>
 
 </html>

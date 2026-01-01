@@ -39,7 +39,7 @@ if (isset($_POST['submit'])) {
     } else {
         // Sanitize email input to prevent SQL injection
         $email = escapeString($_POST['email']);
-        
+
         // Hash password using MD5 to match stored password format
         // Note: MD5 is not cryptographically secure; consider upgrading to bcrypt or Argon2
         $password = md5($_POST['password']);
@@ -53,12 +53,12 @@ if (isset($_POST['submit'])) {
         if (mysqli_num_rows($res) == 1) {
             // Fetch user data from query result
             $row = mysqli_fetch_assoc($res);
-            
+
             // Store user information in session for use across the application
             $_SESSION['user_id'] = $row['user_id'];
             $_SESSION['username'] = $row['username'];
             $_SESSION['email'] = $row['email'];
-            
+
             // Convert MySQL BOOLEAN (stored as 0/1) to PHP boolean type
             // This ensures proper boolean evaluation in conditional statements
             $_SESSION['is_admin'] = (bool) $row['is_admin'];
@@ -68,7 +68,7 @@ if (isset($_POST['submit'])) {
             $_SESSION['login_attempts'] = 0;
 
             // Redirect to main menu after successful authentication
-            header("Location: menu.php");
+            header("Location: menu.php?login=success");
             exit();
         } else {
             // Increment failed login attempt counter
@@ -112,10 +112,14 @@ if (isset($_POST['submit'])) {
         <div class="text-center mb-8">
             <div
                 class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-600 to-red-800 rounded-full mb-4">
-                <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                        d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                </svg>
+                <?php if (function_exists('getImagePath')): ?>
+                    <img src="<?php echo getImagePath('logo.svg', 'poster'); ?>" alt="Logo" class="w-10 h-10">
+                <?php else: ?>
+                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                    </svg>
+                <?php endif; ?>
             </div>
             <h2 class="text-3xl font-bold bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">
                 Welcome Back</h2>
@@ -153,6 +157,14 @@ if (isset($_POST['submit'])) {
             </div>
         </div>
     </div>
+    <?php require_once 'includes/toast.php'; ?>
+    <?php if ($error): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                showToast('<?php echo addslashes($error); ?>', 'error');
+            });
+        </script>
+    <?php endif; ?>
 </body>
 
 </html>

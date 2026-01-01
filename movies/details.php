@@ -958,5 +958,6 @@ if (isset($_SESSION['user_id'])) {
     </script>
     <?php endif; ?>
     <?php require("../includes/footer.php"); ?>
+    <?php require_once 'details_scripts.php'; ?>
 </body>
 </html>

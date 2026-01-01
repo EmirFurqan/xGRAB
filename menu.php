@@ -41,10 +41,10 @@ if (!isset($_SESSION['user_id'])) {
     </style>
 </head>
 
-<body class="bg-gray-900 min-h-screen text-gray-100">
+<body class="bg-gray-900 min-h-screen text-gray-100 flex flex-col">
     <?php require("includes/nav.php"); ?>
 
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-4 py-8 flex-grow">
         <div class="mb-8 fade-in">
             <h1 class="text-4xl font-bold mb-2 bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">
                 Dashboard
@@ -152,6 +152,20 @@ if (!isset($_SESSION['user_id'])) {
             <?php endif; ?>
         </div>
     </div>
+    <?php require("includes/footer.php"); ?>
+</body>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('login') === 'success') {
+            showToast('Welcome back! Ready to find your next favorite movie?', 'success');
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+</script>
 </body>
 
 </html>

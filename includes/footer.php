@@ -37,6 +37,13 @@ if (
     $base_path = "../";
 }
 ?>
+<?php
+// Include image handler for logo path generation
+$image_handler_path = __DIR__ . '/../image_handler.php';
+if (file_exists($image_handler_path)) {
+    require_once $image_handler_path;
+}
+?>
 <footer class="bg-gray-900 text-gray-300 border-t border-gray-800 mt-auto">
     <!-- Main Footer Content -->
     <div class="container mx-auto px-4 py-12">
@@ -44,7 +51,8 @@ if (
             <!-- Brand Column -->
             <div class="space-y-4">
                 <a href="<?php echo $base_path; ?>index.php" class="flex items-center gap-2 group">
-                    <span class="text-3xl">🍿</span>
+                    <img src="<?php echo function_exists('getImagePath') ? getImagePath('logo.svg', 'poster') : $base_path . 'uploads/logo.svg'; ?>"
+                        alt="xGrab Logo" class="w-8 h-8 group-hover:scale-110 transition-transform duration-300">
                     <span
                         class="text-2xl font-bold bg-gradient-to-r from-red-500 to-red-700 bg-clip-text text-transparent group-hover:from-red-400 group-hover:to-red-600 transition-all duration-300">xGrab</span>
                 </a>
@@ -135,4 +143,20 @@ if (
             </div>
         </div>
     </div>
+    </div>
 </footer>
+<?php require_once __DIR__ . '/toast.php'; ?>
+<script>
+    // Update newsletter form to use toast
+    document.addEventListener('DOMContentLoaded', function () {
+        const newsletterForm = document.querySelector('footer form');
+        if (newsletterForm) {
+            newsletterForm.removeAttribute('onsubmit'); // Remove inline handler
+            newsletterForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                showToast('Newsletter feature coming soon! Stay tuned.', 'info');
+                this.reset();
+            });
+        }
+    });
+</script>

@@ -21,7 +21,7 @@ if (!isset($_POST['review_id'])) {
     exit();
 }
 
-$review_id = (int)$_POST['review_id'];
+$review_id = (int) $_POST['review_id'];
 $user_id = $_SESSION['user_id'];
 
 // First, verify the review exists and get its author
@@ -54,28 +54,44 @@ if ($already_liked) {
     // Remove the like record from review_likes table
     $delete_like_sql = "DELETE FROM review_likes WHERE review_id = $review_id AND user_id = $user_id";
     myQuery($delete_like_sql);
-    
+
     // Decrement like_count in reviews table
     // Use MAX to prevent negative counts
     $update_sql = "UPDATE reviews SET like_count = GREATEST(0, like_count - 1) WHERE review_id = $review_id";
     myQuery($update_sql);
-    
+
     $action = "unliked";
 } else {
     // User hasn't liked yet, so like it
     // Insert like record into review_likes table
     $insert_like_sql = "INSERT INTO review_likes (review_id, user_id) VALUES ($review_id, $user_id)";
     myQuery($insert_like_sql);
-    
+
     // Increment like_count in reviews table
     $update_sql = "UPDATE reviews SET like_count = like_count + 1 WHERE review_id = $review_id";
     myQuery($update_sql);
-    
+
     $action = "liked";
 }
 
-// Redirect back to movie details page
+// Check if it's an AJAX request
+if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+    // Get updated like count
+    $count_sql = "SELECT like_count FROM reviews WHERE review_id = $review_id";
+    $count_result = myQuery($count_sql);
+    $new_count = mysqli_fetch_assoc($count_result)['like_count'];
+
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'action' => $action,
+        'like_count' => $new_count,
+        'message' => $action == 'liked' ? 'Review marked as helpful' : 'Review removed from helpful'
+    ]);
+    exit();
+}
+
+// Redirect back to movie details page for non-AJAX requests
 header("Location: ../movies/details.php?id=$movie_id");
 exit();
 ?>
-

@@ -209,7 +209,8 @@ $total_pages = ceil($total_movies / $per_page);
                             </h3>
                             <p class="text-xs text-gray-400 mb-2"><?php echo $movie['release_year']; ?></p>
                             <p class="text-xs text-gray-500">Watched
-                                <?php echo date('M d, Y', strtotime($movie['watched_date'])); ?></p>
+                                <?php echo date('M d, Y', strtotime($movie['watched_date'])); ?>
+                            </p>
                         </div>
                     </div>
                 <?php endwhile; ?>
@@ -255,6 +256,7 @@ $total_pages = ceil($total_movies / $per_page);
             </div>
         <?php endif; ?>
     </div>
+    <?php require("../includes/footer.php"); ?>
 </body>
 
 </html>

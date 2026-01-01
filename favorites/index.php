@@ -202,7 +202,8 @@ $avatar_colors = [
                                 </h3>
                                 <p class="text-xs text-gray-400"><?php echo $fav['release_year']; ?></p>
                                 <p class="text-xs text-gray-500 mt-2">Added
-                                    <?php echo date('M d, Y', strtotime($fav['date_added'])); ?></p>
+                                    <?php echo date('M d, Y', strtotime($fav['date_added'])); ?>
+                                </p>
                             </div>
                         </div>
                     <?php endwhile; ?>
@@ -271,7 +272,8 @@ $avatar_colors = [
                                     </a>
                                 </h3>
                                 <p class="text-xs text-gray-500 mt-2">Added
-                                    <?php echo date('M d, Y', strtotime($fav['date_added'])); ?></p>
+                                    <?php echo date('M d, Y', strtotime($fav['date_added'])); ?>
+                                </p>
                             </div>
                         </div>
                     <?php endwhile; ?>
@@ -340,7 +342,8 @@ $avatar_colors = [
                                     </a>
                                 </h3>
                                 <p class="text-xs text-gray-500 mt-2">Added
-                                    <?php echo date('M d, Y', strtotime($fav['date_added'])); ?></p>
+                                    <?php echo date('M d, Y', strtotime($fav['date_added'])); ?>
+                                </p>
                             </div>
                         </div>
                     <?php endwhile; ?>
@@ -352,6 +355,7 @@ $avatar_colors = [
             <?php endif; ?>
         </div>
     </div>
+    <?php require("../includes/footer.php"); ?>
 </body>
 
 </html>

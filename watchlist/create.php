@@ -127,6 +127,7 @@ if (isset($_POST['submit'])) {
             </form>
         </div>
     </div>
+    <?php require("../includes/footer.php"); ?>
 </body>
 
 </html>

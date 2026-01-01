@@ -179,12 +179,8 @@ $avatar_color = $avatar_colors[$color_index];
                     <div
                         class="absolute inset-0 bg-red-500 blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500 rounded-full scale-150">
                     </div>
-                    <div
-                        class="relative bg-gradient-to-br from-red-500 to-red-700 p-2 rounded-xl shadow-lg group-hover:shadow-red-500/30 transition-all duration-300 group-hover:scale-105">
-                        <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                        </svg>
+                    <div class="relative transition-all duration-300 group-hover:scale-110">
+                        <img src="<?php echo getImagePath("logo.svg", 'poster'); ?>" alt"logo" class="w-auto h-8" />
                     </div>
                 </div>
                 <div class="flex flex-col">
@@ -239,7 +235,8 @@ $avatar_color = $avatar_colors[$color_index];
                             class="flex items-center space-x-2 p-1.5 rounded-xl hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-white/10">
                             <div class="relative">
                                 <?php if ($user_avatar): ?>
-                                    <img src="<?php echo htmlspecialchars(function_exists('getImagePath') ? getImagePath($user_avatar, 'avatar') : $user_avatar); ?>" alt="<?php echo $username; ?>"
+                                    <img src="<?php echo htmlspecialchars(function_exists('getImagePath') ? getImagePath($user_avatar, 'avatar') : $user_avatar); ?>"
+                                        alt="<?php echo $username; ?>"
                                         class="w-9 h-9 rounded-lg border-2 border-gray-600 object-cover">
                                 <?php else: ?>
                                     <?php

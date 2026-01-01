@@ -172,7 +172,8 @@ mysqli_data_seek($result, 0);
                         <?php echo htmlspecialchars($watchlist['watchlist_name']); ?>
                     </h1>
                     <p class="text-gray-400">Created:
-                        <?php echo date('M d, Y', strtotime($watchlist['date_created'])); ?></p>
+                        <?php echo date('M d, Y', strtotime($watchlist['date_created'])); ?>
+                    </p>
                 </div>
                 <a href="edit.php?id=<?php echo $watchlist_id; ?>"
                     class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-300 shadow-md hover:shadow-lg">
@@ -375,6 +376,7 @@ mysqli_data_seek($result, 0);
             </div>
         <?php endif; ?>
     </div>
+    <?php require("../includes/footer.php"); ?>
 </body>
 
 </html>

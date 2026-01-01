@@ -90,20 +90,20 @@ if (isset($_POST['submit'])) {
         // Handle avatar image upload
         // Default to existing avatar filename if no new file is uploaded
         $avatar_filename = $user['profile_avatar'];
-        
+
         // Check if a new avatar file was uploaded successfully
         if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] == 0) {
             // Define upload directory for avatars
             $upload_dir = "../uploads/avatars/";
-            
+
             // Create upload directory if it doesn't exist
             if (!file_exists($upload_dir)) {
                 mkdir($upload_dir, 0777, true);
             }
-            
+
             // Extract file extension from uploaded file
             $file_extension = pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION);
-            
+
             // Generate unique filename using user ID and timestamp
             // Format: avatar_{user_id}_{timestamp}.{extension}
             $avatar_filename = "avatar_" . $user_id . "_" . time() . "." . $file_extension;
@@ -128,7 +128,7 @@ if (isset($_POST['submit'])) {
             // Update session username to reflect the change immediately
             $_SESSION['username'] = $username;
             $success = "Profile updated successfully";
-            
+
             // Reload user data from database to reflect changes
             $result = myQuery($sql);
             $user = mysqli_fetch_assoc($result);
@@ -327,6 +327,7 @@ if (isset($_POST['submit'])) {
             });
         <?php endif; ?>
     </script>
+    <?php require("../includes/footer.php"); ?>
 </body>
 
 </html>
