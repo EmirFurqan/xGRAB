@@ -5,15 +5,29 @@
  * Toggle comments to switch between Local and FastPanel environments.
  */
 
+// Prevent multiple inclusions
+if (defined('CONFIG_LOADED')) {
+    return;
+}
+define('CONFIG_LOADED', true);
+
 // ------------------------------
 // DATABASE CONFIGURATION
 // ------------------------------
 
 // Local Environment
-define('DB_SERVER', 'localhost');
-define('DB_USERNAME', 'root');
-define('DB_PASSWORD', 'root');
-define('DB_NAME', 'movie');
+if (!defined('DB_SERVER')) {
+    define('DB_SERVER', 'localhost');
+}
+if (!defined('DB_USERNAME')) {
+    define('DB_USERNAME', 'root');
+}
+if (!defined('DB_PASSWORD')) {
+    define('DB_PASSWORD', 'root');
+}
+if (!defined('DB_NAME')) {
+    define('DB_NAME', 'movie');
+}
 
 // FastPanel Environment (Uncomment and update when deploying)
 // define('DB_SERVER', 'localhost');
@@ -42,7 +56,9 @@ if (strpos($projectRoot, $docRoot) === 0) {
     $path = !empty($folder) ? '/' . $folder . '/' : '/';
 }
 
-define('BASE_URL', $protocol . "://" . $host . $path);
+if (!defined('BASE_URL')) {
+    define('BASE_URL', $protocol . "://" . $host . $path);
+}
 
 // FastPanel Environment Base URL (Uncomment when deploying)
 // define('BASE_URL', 'http://10.1.7.100:7777/st2025-024.com/xGRAB/');
@@ -53,14 +69,18 @@ define('BASE_URL', $protocol . "://" . $host . $path);
 // ------------------------------
 // Used for asset paths like images/css/js
 // Result: /xGRAB or /st2025-024.com/xGRAB
-$url_path = parse_url(BASE_URL, PHP_URL_PATH);
-define('PROJECT_URI_ROOT', rtrim($url_path, '/'));
+if (!defined('PROJECT_URI_ROOT')) {
+    $url_path = parse_url(BASE_URL, PHP_URL_PATH);
+    define('PROJECT_URI_ROOT', rtrim($url_path, '/'));
+}
 
 
 // ------------------------------
 // FILESYSTEM PATHS
 // ------------------------------
 // Absolute path to the project root directory
-define('ROOT_PATH', realpath(__DIR__ . '/../'));
+if (!defined('ROOT_PATH')) {
+    define('ROOT_PATH', realpath(__DIR__ . '/../'));
+}
 
 ?>
