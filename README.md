@@ -96,4 +96,3 @@ This project uses MD5 for password hashing for educational simplicity. For a pro
 This project is open-source and available under the [MIT License](LICENSE).
 
 ---
-*Built with ❤️ by Emir Furqan*
