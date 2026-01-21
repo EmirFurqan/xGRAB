@@ -82,6 +82,16 @@ if (!empty($search)) {
 
 $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
 
+// Check if is_banned column exists, if not, add it
+$check_column_sql = "SHOW COLUMNS FROM users LIKE 'is_banned'";
+$column_result = myQuery($check_column_sql);
+$has_is_banned = mysqli_num_rows($column_result) > 0;
+
+if (!$has_is_banned) {
+    $alter_sql = "ALTER TABLE users ADD COLUMN is_banned BOOLEAN DEFAULT FALSE AFTER is_admin";
+    myQuery($alter_sql);
+}
+
 // Retrieve reviews for moderation with pagination
 // JOINs with users and movies tables to get context information
 // Includes user ban status (u.is_banned) to display banned badge
@@ -156,8 +166,10 @@ $total_pages = ceil($total_reviews / $per_page);
                     <label class="block text-sm font-medium text-gray-300 mb-1">Filter</label>
                     <select name="filter"
                         class="w-full px-4 py-2 bg-gray-700 border-2 border-gray-600 rounded-lg text-gray-100 focus:border-red-500 focus:ring-2 focus:ring-red-500 transition-all duration-300">
-                        <option value="flagged" <?php echo $filter == 'flagged' ? 'selected' : ''; ?>>Flagged Reviews</option>
-                        <option value="reported" <?php echo $filter == 'reported' ? 'selected' : ''; ?>>All Reported</option>
+                        <option value="flagged" <?php echo $filter == 'flagged' ? 'selected' : ''; ?>>Flagged Reviews
+                        </option>
+                        <option value="reported" <?php echo $filter == 'reported' ? 'selected' : ''; ?>>All Reported
+                        </option>
                         <option value="all" <?php echo $filter == 'all' ? 'selected' : ''; ?>>All Reviews</option>
                     </select>
                 </div>
@@ -213,7 +225,8 @@ $total_pages = ceil($total_reviews / $per_page);
                                     <!-- Banned User Badge -->
                                     <!-- Display badge only if user is banned -->
                                     <?php if (isset($review['is_banned']) && $review['is_banned']): ?>
-                                        <span class="bg-red-900 border border-red-700 text-red-200 px-2 py-1 rounded text-xs font-bold ml-2">Banned</span>
+                                        <span
+                                            class="bg-red-900 border border-red-700 text-red-200 px-2 py-1 rounded text-xs font-bold ml-2">Banned</span>
                                     <?php endif; ?>
                                     on <?php echo date('M d, Y', strtotime($review['created_at'])); ?>
                                 </p>

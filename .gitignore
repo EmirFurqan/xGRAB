@@ -1,0 +1,16 @@
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore configuration with actual credentials (use config.example.php instead)
+includes/config.php
+
+# Ignore user uploads (keep the folder structure though)
+uploads/*
+!uploads/.gitkeep
+!uploads/default_avatar.png
+# (Assuming there might be a default or we just want the dir)
+
+# Ignore vendor if we use composer (future proofing)
+vendor/
+node_modules/
