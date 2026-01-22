@@ -14,6 +14,20 @@
 
 Designed with a premium **"Netflix-style"** aesthetic, it features a responsive glassmorphism UI/UX, smooth animations, and a powerful admin dashboard for content management.
 
+## 📸 Screenshots
+
+| Home Page (Hero) | Catchy Landing |
+| :---: | :---: |
+| ![Home Page](screenshots/homepage-1.png) | ![Landing Section](screenshots/homepage-2.png) |
+
+| Movie Details | Watchlist Management |
+| :---: | :---: |
+| ![Movie Details](screenshots/movie.png) | ![Watchlist](screenshots/watchlist.png) |
+
+| Login Page | Registration Page |
+| :---: | :---: |
+| ![Login](screenshots/login.png) | ![Register](screenshots/register.png) |
+
 ## ✨ Key Features
 
 ### 👤 **User Experience**
