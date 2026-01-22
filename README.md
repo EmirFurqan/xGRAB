@@ -18,15 +18,15 @@ Designed with a premium **"Netflix-style"** aesthetic, it features a responsive 
 
 | Home Page (Hero) | Catchy Landing |
 | :---: | :---: |
-| ![Home Page](screenshots/homepage-1.png) | ![Landing Section](screenshots/homepage-2.png) |
+| ![Home Page](screenshots/homepage-1.jpg) | ![Landing Section](screenshots/homepage-2.jpg) |
 
 | Movie Details | Watchlist Management |
 | :---: | :---: |
-| ![Movie Details](screenshots/movie.png) | ![Watchlist](screenshots/watchlist.png) |
+| ![Movie Details](screenshots/movie.jpg) | ![Watchlist](screenshots/watchlist.jpg) |
 
 | Login Page | Registration Page |
 | :---: | :---: |
-| ![Login](screenshots/login.png) | ![Register](screenshots/register.png) |
+| ![Login](screenshots/login.jpg) | ![Register](screenshots/register.jpg) |
 
 ## ✨ Key Features
 
